@@ -1,0 +1,228 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fl-ca
+  namespace: fl-enterprise
+  labels:
+    app: fl-ca
+    component: central-authority
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fl-ca
+  template:
+    metadata:
+      labels:
+        app: fl-ca
+    spec:
+      containers:
+      - name: ca
+        image: fl-enterprise-ca:latest
+        ports:
+        - containerPort: 9000
+        env:
+        - name: CA_PORT
+          value: "9000"
+        - name: PYTHONPATH
+          value: "/app"
+        volumeMounts:
+        - name: ca-certs
+          mountPath: /app/certs
+        - name: ca-config
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: ca-certs
+        persistentVolumeClaim:
+          claimName: ca-certs-pvc
+      - name: ca-config
+        configMap:
+          name: fl-config
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fl-server
+  namespace: fl-enterprise
+  labels:
+    app: fl-server
+    component: federated-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fl-server
+  template:
+    metadata:
+      labels:
+        app: fl-server
+    spec:
+      containers:
+      - name: server
+        image: fl-enterprise-server:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SERVER_PORT
+          value: "8080"
+        - name: PYTHONPATH
+          value: "/app"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: model-volume
+          mountPath: /app/global_model.pkl
+        - name: ca-certs
+          mountPath: /app/certs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: data-pvc
+      - name: model-volume
+        persistentVolumeClaim:
+          claimName: model-pvc
+      - name: ca-certs
+        persistentVolumeClaim:
+          claimName: ca-certs-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fl-dashboard
+  namespace: fl-enterprise
+  labels:
+    app: fl-dashboard
+    component: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fl-dashboard
+  template:
+    metadata:
+      labels:
+        app: fl-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: fl-enterprise-dashboard:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DASHBOARD_PORT
+          value: "5000"
+        - name: PYTHONPATH
+          value: "/app"
+        - name: FLASK_ENV
+          value: "production"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: dashboard-logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/system/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/system/status
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: data-pvc
+      - name: dashboard-logs
+        persistentVolumeClaim:
+          claimName: dashboard-logs-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fl-client
+  namespace: fl-enterprise
+  labels:
+    app: fl-client
+    component: federated-client
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: fl-client
+  template:
+    metadata:
+      labels:
+        app: fl-client
+    spec:
+      containers:
+      - name: client
+        image: fl-enterprise-client:latest
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        - name: SERVER_ADDRESS
+          value: "fl-server:8080"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: client-config
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: data-pvc
+      - name: client-config
+        configMap:
+          name: fl-config

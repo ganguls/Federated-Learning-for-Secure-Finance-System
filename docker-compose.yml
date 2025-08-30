@@ -1,8 +1,248 @@
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY server.py .
-COPY certs/ /app/certs/
-EXPOSE 5000
-CMD ["python", "server.py"]
+version: '3.8'
+
+services:
+  # Central Authority Service
+  ca:
+    build: ./ca
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./ca:/app/ca
+      - ca-certs:/app/certs
+    environment:
+      - PYTHONPATH=/app
+      - CA_PORT=9000
+    networks:
+      - fl-network
+    command: python ca_service.py
+
+  # Enhanced Dashboard
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./server:/app/server:ro
+      - ./clients:/app/clients:ro
+      - ./ca:/app/ca:ro
+      - dashboard-logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_ENV=production
+      - DASHBOARD_PORT=5000
+    networks:
+      - fl-network
+    depends_on:
+      - ca
+      - server
+    restart: unless-stopped
+
+  # Enhanced Server
+  server:
+    build: ./server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./global_model.pkl:/app/global_model.pkl
+      - server-logs:/app/logs
+      - ca-certs:/app/certs:ro
+    environment:
+      - PYTHONPATH=/app
+      - SERVER_PORT=8080
+      - MIN_CLIENTS=5
+      - NUM_ROUNDS=10
+    networks:
+      - fl-network
+    command: python server.py
+    restart: unless-stopped
+
+  # Client Services (Dynamic scaling)
+  client1:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client1:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=1
+      - SERVER_ADDRESS=server:8080
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 1
+    restart: unless-stopped
+
+  client2:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client2:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=2
+      - SERVER_ADDRESS=server:8080
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 2
+    restart: unless-stopped
+
+  client3:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client3:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=3
+      - SERVER_ADDRESS=server:8080
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 3
+    restart: unless-stopped
+
+  client4:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client4:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=4
+      - SERVER_ADDRESS=server:8080
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 4
+    restart: unless-stopped
+
+  client5:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client5:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=5
+      - SERVER_ADDRESS=server:8080
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 5
+    restart: unless-stopped
+
+  # Monitoring and Logging
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - fl-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - fl-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - fl-network
+    restart: unless-stopped
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - dashboard
+      - server
+    networks:
+      - fl-network
+    restart: unless-stopped
+
+volumes:
+  ca-certs:
+    driver: local
+  dashboard-logs:
+    driver: local
+  server-logs:
+    driver: local
+  client-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  redis-data:
+    driver: local
+  nginx-logs:
+    driver: local
+
+networks:
+  fl-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

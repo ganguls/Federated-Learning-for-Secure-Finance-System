@@ -1,47 +1,104 @@
 import flwr as fl
-import ssl
-from typing import Tuple
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.preprocessing import StandardScaler
+import joblib
+import os
+from typing import Dict, List, Tuple, Optional
+from flwr.server import ServerConfig
+from flwr.server.strategy import FedAvg
+from flwr.common import Metrics
+import json
 
-# =========================
-# Flower Server Configuration
-# =========================
-
-# Number of FL rounds
-NUM_ROUNDS = 5
-
-# TLS / mTLS placeholders
-# Replace these file paths with actual certificate files when ready
-SERVER_CERT = "ca/server.crt"
-SERVER_KEY = "ca/server.key"
-ROOT_CA_CERT = "ca/ca.crt"
+class LoanServerStrategy(FedAvg):
+    """Custom federated averaging strategy for loan prediction"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.round_metrics = []
+        self.client_metrics = {}
+    
+    def aggregate_evaluate(
+        self,
+        server_round: int,
+        results,
+        failures,
+    ) -> Optional[float]:
+        """Aggregate evaluation metrics from all clients"""
+        if not results:
+            return None
+        
+        # Aggregate accuracy
+        accuracies = [r.metrics.get("accuracy", 0.0) for r in results]
+        avg_accuracy = sum(accuracies) / len(accuracies)
+        
+        # Collect client-specific metrics
+        round_metrics = {
+            "round": server_round,
+            "avg_accuracy": avg_accuracy,
+            "client_metrics": {}
+        }
+        
+        for r in results:
+            client_id = r.metrics.get("client_id", "unknown")
+            round_metrics["client_metrics"][client_id] = {
+                "accuracy": r.metrics.get("accuracy", 0.0),
+                "precision": r.metrics.get("precision", 0.0),
+                "recall": r.metrics.get("recall", 0.0),
+                "f1_score": r.metrics.get("f1_score", 0.0)
+            }
+        
+        self.round_metrics.append(round_metrics)
+        
+        # Save metrics to file
+        self.save_metrics()
+        
+        print(f"Round {server_round} - Average Accuracy: {avg_accuracy:.4f}")
+        return avg_accuracy
+    
+    def save_metrics(self):
+        """Save training metrics to file"""
+        metrics_file = "training_metrics.json"
+        with open(metrics_file, "w") as f:
+            json.dump(self.round_metrics, f, indent=2)
+        print(f"Metrics saved to {metrics_file}")
 
 def main():
-    """
-    Start a Flower federated learning server.
-    TLS / mTLS can be configured by providing SSL credentials.
-    """
-    # Create server SSL credentials (placeholder)
-    # Note: Uncomment and configure for actual TLS/mTLS
-    """
-    with open(SERVER_CERT, "rb") as f:
-        server_cert = f.read()
-    with open(SERVER_KEY, "rb") as f:
-        server_key = f.read()
-    with open(ROOT_CA_CERT, "rb") as f:
-        root_cert = f.read()
-
-    server_credentials = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    server_credentials.load_cert_chain(certfile=SERVER_CERT, keyfile=SERVER_KEY)
-    server_credentials.load_verify_locations(ROOT_CA_CERT)
-    server_credentials.verify_mode = ssl.CERT_REQUIRED
-    """
-
-    # Start the Flower server
-    print("Starting Flower server...")
+    """Start the Flower federated learning server"""
+    print("Starting Federated Learning Server for Loan Prediction...")
+    print("=" * 60)
+    
+    # Server configuration
+    config = ServerConfig(
+        num_rounds=5,
+        min_fit_clients=5,  # Minimum clients required for training
+        min_evaluate_clients=5,  # Minimum clients required for evaluation
+        min_available_clients=5,  # Minimum available clients to start round
+    )
+    
+    # Strategy configuration
+    strategy = LoanServerStrategy(
+        min_fit_clients=5,
+        min_evaluate_clients=5,
+        min_available_clients=5,
+        fraction_fit=1.0,  # Use all available clients for training
+        fraction_evaluate=1.0,  # Use all available clients for evaluation
+    )
+    
+    # Start the server
+    print("Server configuration:")
+    print(f"  - Number of rounds: {config.num_rounds}")
+    print(f"  - Min fit clients: {config.min_fit_clients}")
+    print(f"  - Min evaluate clients: {config.min_evaluate_clients}")
+    print(f"  - Min available clients: {config.min_available_clients}")
+    print("=" * 60)
+    
     fl.server.start_server(
         server_address="0.0.0.0:8080",
-        config={"num_rounds": NUM_ROUNDS},
-        # grpc_ssl_server_credentials=server_credentials  # Uncomment when TLS ready
+        config=config,
+        strategy=strategy,
     )
 
 if __name__ == "__main__":

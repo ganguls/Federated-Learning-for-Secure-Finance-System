@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fl-config
+  namespace: fl-enterprise
+data:
+  server_config: |
+    {
+      "num_rounds": 10,
+      "min_fit_clients": 5,
+      "min_evaluate_clients": 5,
+      "min_available_clients": 5
+    }
+  client_config: |
+    {
+      "max_iter": 1000,
+      "solver": "lbfgs",
+      "random_state": 42
+    }
+  dashboard_config: |
+    {
+      "port": 5000,
+      "debug": false,
+      "host": "0.0.0.0"
+    }
