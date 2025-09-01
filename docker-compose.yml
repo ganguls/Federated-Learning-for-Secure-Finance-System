@@ -165,7 +165,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -197,8 +197,6 @@ services:
   # Redis for caching and session management
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
