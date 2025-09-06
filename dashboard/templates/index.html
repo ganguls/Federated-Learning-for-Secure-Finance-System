@@ -35,6 +35,8 @@
             background: var(--primary-bg);
             color: var(--text-primary);
             line-height: 1.6;
+            overflow-x: hidden;
+            max-width: 100vw;
         }
 
         .header {
@@ -255,6 +257,8 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1rem;
             margin-top: 1rem;
+            max-width: 100%;
+            overflow: hidden;
         }
         
         .client-chart-item {
@@ -262,6 +266,8 @@
             border-radius: 8px;
             padding: 1rem;
             border: 1px solid var(--border-color);
+            max-width: 100%;
+            overflow: hidden;
         }
         
         .client-chart-item h4 {
@@ -271,8 +277,31 @@
         }
         
         .client-chart-item canvas {
-            width: 100%;
-            height: 200px;
+            width: 100% !important;
+            height: 200px !important;
+            max-width: 100%;
+        }
+        
+        .metric-card {
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        .metric-card canvas {
+            width: 100% !important;
+            height: 300px !important;
+            max-width: 100%;
+        }
+        
+        /* Prevent horizontal overflow */
+        * {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .container, .main-content, .tab-content {
+            max-width: 100%;
+            overflow-x: hidden;
         }
     </style>
 </head>
@@ -478,10 +507,21 @@
             console.log('Loading initial data...');
             
             // Initialize training chart
-            initializeTrainingChart();
+            try {
+                initializeTrainingChart();
+                console.log('Training chart initialized successfully');
+            } catch (error) {
+                console.error('Error initializing training chart:', error);
+            }
             
-            fetch('/api/system/status')
-                .then(response => response.json())
+            // Use relative URLs to avoid antivirus blocking
+            const baseUrl = window.location.origin;
+            
+            fetch(`${baseUrl}/api/system/status`)
+                .then(response => {
+                    console.log('System status response:', response.status);
+                    return response.json();
+                })
                 .then(data => {
                     console.log('System status data:', data);
                     updateSystemStatus(data.status);
@@ -492,8 +532,11 @@
                     console.error('Error fetching system status:', error);
                 });
             
-            fetch('/api/metrics/system')
-                .then(response => response.json())
+            fetch(`${baseUrl}/api/metrics/system`)
+                .then(response => {
+                    console.log('System metrics response:', response.status);
+                    return response.json();
+                })
                 .then(data => {
                     console.log('System metrics data:', data);
                     updateMetrics({ system: data });
@@ -502,8 +545,11 @@
                     console.error('Error fetching system metrics:', error);
                 });
             
-            fetch('/api/metrics/clients')
-                .then(response => response.json())
+            fetch(`${baseUrl}/api/metrics/clients`)
+                .then(response => {
+                    console.log('Client metrics response:', response.status);
+                    return response.json();
+                })
                 .then(data => {
                     console.log('Client metrics data:', data);
                     updateClientMetrics(data);
@@ -513,10 +559,18 @@
                 });
             
             // Fetch initial training data
-            fetch('/api/metrics/training')
-                .then(response => response.json())
+            console.log('Fetching initial training data...');
+            fetch(`${baseUrl}/api/metrics/training`)
+                .then(response => {
+                    console.log('Training metrics response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    console.log('Initial training data:', data);
+                    console.log('Initial training data received:', data);
+                    console.log('Data length:', data.length);
                     updateTrainingChart(data);
                     updateClientCharts(data);
                 })
@@ -616,10 +670,20 @@
         let trainingChart = null;
 
         function initializeTrainingChart() {
+            console.log('Initializing training chart...');
             const ctx = document.getElementById('trainingChart');
-            if (!ctx) return;
+            if (!ctx) {
+                console.log('Training chart canvas not found');
+                return;
+            }
+            
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js not loaded');
+                return;
+            }
 
-            trainingChart = new Chart(ctx, {
+            try {
+                trainingChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
@@ -634,6 +698,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    aspectRatio: 2,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -652,10 +717,17 @@
                     }
                 }
             });
+            } catch (error) {
+                console.error('Error initializing training chart:', error);
+            }
         }
 
         function updateTrainingChart(trainingData) {
-            if (!trainingChart || !trainingData || trainingData.length === 0) return;
+            console.log('updateTrainingChart called with:', trainingData);
+            if (!trainingChart || !trainingData || trainingData.length === 0) {
+                console.log('updateTrainingChart: No chart or no data');
+                return;
+            }
 
             const rounds = trainingData.map(d => d.round);
             const accuracies = trainingData.map(d => d.avg_accuracy);
@@ -692,6 +764,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    aspectRatio: 2,
                     scales: {
                         y: {
                             type: 'linear',
@@ -727,7 +800,11 @@
         }
 
         function updateClientCharts(trainingData) {
-            if (!trainingData || trainingData.length === 0) return;
+            console.log('updateClientCharts called with:', trainingData);
+            if (!trainingData || trainingData.length === 0) {
+                console.log('updateClientCharts: No data');
+                return;
+            }
 
             const container = document.getElementById('clientChartsGrid');
             if (!container) return;
@@ -780,9 +857,11 @@
         }
 
         function startMetricsPolling() {
+            const baseUrl = window.location.origin;
+            
             setInterval(() => {
                 // Fetch system status for real-time updates
-                fetch('/api/system/status')
+                fetch(`${baseUrl}/api/system/status`)
                     .then(response => response.json())
                     .then(data => {
                         updateSystemStatus(data.status);
@@ -791,22 +870,29 @@
                     });
                 
                 // Fetch system metrics
-                fetch('/api/metrics/system')
+                fetch(`${baseUrl}/api/metrics/system`)
                     .then(response => response.json())
                     .then(data => {
                         updateMetrics({ system: data });
                     });
                 
                 // Fetch client metrics
-                fetch('/api/metrics/clients')
+                fetch(`${baseUrl}/api/metrics/clients`)
                     .then(response => response.json())
                     .then(data => {
                         updateClientMetrics(data);
                     });
                 
                 // Fetch training metrics
-                fetch('/api/metrics/training')
-                    .then(response => response.json())
+                console.log('Fetching training metrics...');
+                fetch(`${baseUrl}/api/metrics/training`)
+                    .then(response => {
+                        console.log('Training metrics response:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         console.log('Training data received:', data);
                         updateTrainingChart(data);

@@ -66,7 +66,14 @@ class LoanServerStrategy(FedAvg):
             avg_accuracy = sum(accuracies) / len(accuracies)
             round_metrics["avg_accuracy"] = avg_accuracy
         
-        self.round_metrics.append(round_metrics)
+        # Only save serializable data
+        serializable_metrics = {
+            "round": server_round,
+            "avg_accuracy": avg_accuracy if accuracies else 0.0,
+            "client_metrics": round_metrics["client_metrics"]
+        }
+        
+        self.round_metrics.append(serializable_metrics)
         
         # Save metrics to file
         self.save_metrics()
