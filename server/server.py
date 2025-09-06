@@ -73,9 +73,6 @@ def main():
     # Server configuration
     config = ServerConfig(
         num_rounds=5,
-        min_fit_clients=5,  # Minimum clients required for training
-        min_evaluate_clients=5,  # Minimum clients required for evaluation
-        min_available_clients=5,  # Minimum available clients to start round
     )
     
     # Strategy configuration

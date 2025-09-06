@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'fl-dashboard'
+    static_configs:
+      - targets: ['dashboard:5000']
+
+  - job_name: 'fl-server'
+    static_configs:
+      - targets: ['server:8080']
+
+  - job_name: 'fl-ca'
+    static_configs:
+      - targets: ['ca:9000']
