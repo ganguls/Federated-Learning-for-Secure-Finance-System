@@ -30,25 +30,41 @@ class LoanServerStrategy(FedAvg):
         if not results:
             return None
         
-        # Aggregate accuracy
-        accuracies = [r.metrics.get("accuracy", 0.0) for r in results]
-        avg_accuracy = sum(accuracies) / len(accuracies)
-        
-        # Collect client-specific metrics
+        # Aggregate accuracy - results is a list of tuples (loss, metrics, num_examples)
+        accuracies = []
         round_metrics = {
             "round": server_round,
-            "avg_accuracy": avg_accuracy,
+            "avg_accuracy": 0.0,
             "client_metrics": {}
         }
         
-        for r in results:
-            client_id = r.metrics.get("client_id", "unknown")
+        for result in results:
+            # result is a tuple (loss, metrics, num_examples)
+            if len(result) == 3:
+                loss, metrics, num_examples = result
+            elif len(result) == 2:
+                loss, metrics = result
+                num_examples = 0
+            else:
+                continue
+                
+            # metrics is a dictionary, extract values safely
+            accuracy = metrics.get("accuracy", 0.0) if isinstance(metrics, dict) else 0.0
+            accuracies.append(accuracy)
+            
+            client_id = metrics.get("client_id", "unknown") if isinstance(metrics, dict) else "unknown"
             round_metrics["client_metrics"][client_id] = {
-                "accuracy": r.metrics.get("accuracy", 0.0),
-                "precision": r.metrics.get("precision", 0.0),
-                "recall": r.metrics.get("recall", 0.0),
-                "f1_score": r.metrics.get("f1_score", 0.0)
+                "accuracy": accuracy,
+                "precision": metrics.get("precision", 0.0) if isinstance(metrics, dict) else 0.0,
+                "recall": metrics.get("recall", 0.0) if isinstance(metrics, dict) else 0.0,
+                "f1_score": metrics.get("f1_score", 0.0) if isinstance(metrics, dict) else 0.0,
+                "loss": loss,
+                "num_examples": num_examples
             }
+        
+        if accuracies:
+            avg_accuracy = sum(accuracies) / len(accuracies)
+            round_metrics["avg_accuracy"] = avg_accuracy
         
         self.round_metrics.append(round_metrics)
         
@@ -87,9 +103,9 @@ def main():
     # Start the server
     print("Server configuration:")
     print(f"  - Number of rounds: {config.num_rounds}")
-    print(f"  - Min fit clients: {config.min_fit_clients}")
-    print(f"  - Min evaluate clients: {config.min_evaluate_clients}")
-    print(f"  - Min available clients: {config.min_available_clients}")
+    print(f"  - Min fit clients: {strategy.min_fit_clients}")
+    print(f"  - Min evaluate clients: {strategy.min_evaluate_clients}")
+    print(f"  - Min available clients: {strategy.min_available_clients}")
     print("=" * 60)
     
     fl.server.start_server(

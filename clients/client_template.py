@@ -120,9 +120,8 @@ def main():
     
     # Start Flower client
     fl.client.start_numpy_client(
-        server_address="localhost:8080",
-        client=client,
-        config=fl.server.ServerConfig(num_rounds=5)
+        server_address="server:8080",  # Use Docker service name
+        client=client
     )
 
 if __name__ == "__main__":

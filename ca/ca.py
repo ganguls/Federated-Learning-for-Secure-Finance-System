@@ -415,6 +415,44 @@ class CentralAuthority:
         with open(self.ca_cert_path, "r") as f:
             return f.read()
     
+    def get_ca_status(self) -> Dict:
+        """Get CA status information"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Count active certificates
+            cursor.execute("SELECT COUNT(*) FROM certificates WHERE status = 'active'")
+            active_certs = cursor.fetchone()[0]
+            
+            # Count revoked certificates
+            cursor.execute("SELECT COUNT(*) FROM certificates WHERE status = 'revoked'")
+            revoked_certs = cursor.fetchone()[0]
+            
+            # Count expired certificates
+            cursor.execute("SELECT COUNT(*) FROM certificates WHERE status = 'expired'")
+            expired_certs = cursor.fetchone()[0]
+            
+            conn.close()
+            
+            return {
+                "status": "healthy",
+                "ca_initialized": self.ca_cert_path.exists() and self.ca_key_path.exists(),
+                "active_certificates": active_certs,
+                "revoked_certificates": revoked_certs,
+                "expired_certificates": expired_certs,
+                "total_certificates": active_certs + revoked_certs + expired_certs,
+                "ca_certificate_path": str(self.ca_cert_path),
+                "ca_private_key_path": str(self.ca_key_path),
+                "database_path": str(self.db_path)
+            }
+        except Exception as e:
+            logger.error(f"Error getting CA status: {e}")
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+    
     def cleanup_expired_certificates(self) -> int:
         """Remove expired certificates and return count of cleaned up"""
         try:

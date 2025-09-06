@@ -27,6 +27,7 @@ services:
       - ./clients:/app/clients:ro
       - ./ca:/app/ca:ro
       - dashboard-logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - PYTHONPATH=/app
       - FLASK_ENV=production
@@ -180,8 +181,8 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3002:3000"
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import subprocess
@@ -10,6 +10,7 @@ import psutil
 from datetime import datetime
 import logging
 from pathlib import Path
+import docker
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +29,12 @@ class FLDashboard:
         self.system_status = "stopped"
         self.metrics_history = []
         self.client_statuses = {}
+        self.docker_client = None
+        try:
+            self.docker_client = docker.from_env()
+        except Exception as e:
+            logger.warning(f"Could not connect to Docker: {e}")
+            self.docker_client = None
         
     def start_server(self):
         """Start the federated learning server"""
@@ -136,23 +143,86 @@ class FLDashboard:
             logger.error(f"Error reading training metrics: {e}")
             return []
     
+    def get_docker_containers(self):
+        """Get Docker containers related to FL system"""
+        if not self.docker_client:
+            return {}
+        
+        try:
+            containers = self.docker_client.containers.list(all=True)
+            fl_containers = {}
+            
+            for container in containers:
+                # Check if container is part of FL system
+                if any(name in container.name for name in ['flsystem', 'fl-enterprise']):
+                    container_type = 'unknown'
+                    client_id = None
+                    
+                    if 'client' in container.name:
+                        container_type = 'client'
+                        # Extract client ID from container name
+                        try:
+                            client_id = int(container.name.split('client')[1].split('-')[0])
+                        except:
+                            pass
+                    elif 'server' in container.name:
+                        container_type = 'server'
+                    elif 'ca' in container.name:
+                        container_type = 'ca'
+                    elif 'dashboard' in container.name:
+                        container_type = 'dashboard'
+                    
+                    fl_containers[container.name] = {
+                        'id': container.short_id,
+                        'name': container.name,
+                        'status': container.status,
+                        'type': container_type,
+                        'client_id': client_id,
+                        'created': container.attrs['Created'],
+                        'image': container.image.tags[0] if container.image.tags else 'unknown'
+                    }
+            
+            return fl_containers
+        except Exception as e:
+            logger.error(f"Error getting Docker containers: {e}")
+            return {}
+
     def get_client_metrics(self):
         """Get metrics for all clients"""
-        client_metrics = {}
-        for client_id, client_info in self.clients.items():
-            if client_info['status'] == 'running':
-                # Check if client process is still running
-                if client_info['process'].poll() is not None:
-                    client_info['status'] = 'stopped'
-                
-                # Get client-specific metrics
-                client_metrics[client_id] = {
-                    'status': client_info['status'],
-                    'uptime': str(datetime.now() - client_info['start_time']).split('.')[0],
-                    'metrics': client_info.get('metrics', {})
-                }
-        
-        return client_metrics
+        if self.docker_client:
+            # Use Docker container detection
+            containers = self.get_docker_containers()
+            client_metrics = {}
+            
+            for container_name, container_info in containers.items():
+                if container_info['type'] == 'client' and container_info['client_id']:
+                    client_id = container_info['client_id']
+                    client_metrics[client_id] = {
+                        'status': 'running' if container_info['status'] == 'running' else 'stopped',
+                        'container_name': container_name,
+                        'container_id': container_info['id'],
+                        'uptime': 'N/A',  # Could calculate from created time
+                        'metrics': {}
+                    }
+            
+            return client_metrics
+        else:
+            # Fallback to subprocess detection
+            client_metrics = {}
+            for client_id, client_info in self.clients.items():
+                if client_info['status'] == 'running':
+                    # Check if client process is still running
+                    if client_info['process'].poll() is not None:
+                        client_info['status'] = 'stopped'
+                    
+                    # Get client-specific metrics
+                    client_metrics[client_id] = {
+                        'status': client_info['status'],
+                        'uptime': str(datetime.now() - client_info['start_time']).split('.')[0],
+                        'metrics': client_info.get('metrics', {})
+                    }
+            
+            return client_metrics
 
 # Initialize dashboard
 dashboard = FLDashboard()
@@ -160,16 +230,42 @@ dashboard = FLDashboard()
 @app.route('/')
 def index():
     """Main dashboard page"""
+    # Set default username if not in session
+    if 'username' not in session:
+        session['username'] = 'admin'
     return render_template('index.html')
 
 @app.route('/api/system/status')
 def get_system_status():
     """Get current system status"""
-    return jsonify({
-        'status': dashboard.system_status,
-        'clients_count': len(dashboard.clients),
-        'active_clients': len([c for c in dashboard.clients.values() if c['status'] == 'running'])
-    })
+    if dashboard.docker_client:
+        # Use Docker container detection
+        containers = dashboard.get_docker_containers()
+        client_containers = [c for c in containers.values() if c['type'] == 'client']
+        active_clients = len([c for c in client_containers if c['status'] == 'running'])
+        
+        # Check server status
+        server_containers = [c for c in containers.values() if c['type'] == 'server']
+        server_status = 'running' if any(c['status'] == 'running' for c in server_containers) else 'stopped'
+        
+        # Check CA status
+        ca_containers = [c for c in containers.values() if c['type'] == 'ca']
+        ca_status = 'running' if any(c['status'] == 'running' for c in ca_containers) else 'stopped'
+        
+        return jsonify({
+            'status': server_status,
+            'clients_count': len(client_containers),
+            'active_clients': active_clients,
+            'ca_status': ca_status,
+            'containers': containers
+        })
+    else:
+        # Fallback to subprocess detection
+        return jsonify({
+            'status': dashboard.system_status,
+            'clients_count': len(dashboard.clients),
+            'active_clients': len([c for c in dashboard.clients.values() if c['status'] == 'running'])
+        })
 
 @app.route('/api/system/start', methods=['POST'])
 def start_system():
@@ -260,6 +356,21 @@ def test_page():
     </html>
     """
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page"""
+    if request.method == 'POST':
+        username = request.form.get('username', 'admin')
+        session['username'] = username
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout and clear session"""
+    session.clear()
+    return redirect(url_for('login'))
+
 def background_metrics_collector():
     """Background task to collect metrics"""
     while True:
@@ -304,4 +415,4 @@ if __name__ == '__main__':
     metrics_thread.start()
     
     # Run the dashboard
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)

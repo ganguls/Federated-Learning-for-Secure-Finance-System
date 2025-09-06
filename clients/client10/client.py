@@ -22,7 +22,7 @@ class LoanClient(fl.client.NumPyClient):
     
     def load_data(self):
         """Load client-specific data"""
-        data_path = f"/app/data/FL_clients/client_{self.client_id}.csv"
+        data_path = f"../../Datapre/FL_clients/client_{self.client_id}.csv"
         if os.path.exists(data_path):
             df = pd.read_csv(data_path)
             print(f"Client {self.client_id}: Loaded {len(df)} samples")

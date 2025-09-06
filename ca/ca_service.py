@@ -32,6 +32,21 @@ def health_check():
         'timestamp': time.time()
     })
 
+@app.route('/metrics', methods=['GET'])
+def get_metrics():
+    """Metrics endpoint for monitoring"""
+    try:
+        status = ca.get_ca_status()
+        return jsonify({
+            'status': 'healthy',
+            'service': 'central-authority',
+            'certificates_count': len(ca.list_certificates()),
+            'timestamp': time.time()
+        })
+    except Exception as e:
+        logger.error(f"Error getting metrics: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/status', methods=['GET'])
 def get_status():
     """Get CA status"""
