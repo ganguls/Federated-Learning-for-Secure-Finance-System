@@ -9,19 +9,58 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         :root {
-            --primary-bg: #0f1419;
-            --secondary-bg: #1a1f2e;
-            --card-bg: #252b3d;
-            --accent-color: #4f46e5;
-            --accent-hover: #6366f1;
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1aa;
+            /* Dark theme colors (SOCRadar inspired) */
+            --dark-primary-bg: #1a1d23;
+            --dark-secondary-bg: #242832;
+            --dark-card-bg: #2d3142;
+            --dark-sidebar-bg: #1e2129;
+            --dark-border-color: #3a3f4b;
+            --dark-text-primary: #ffffff;
+            --dark-text-secondary: #b8bcc8;
+            --dark-text-muted: #8b92a8;
+            
+            /* Light theme colors */
+            --light-primary-bg: #f8fafc;
+            --light-secondary-bg: #ffffff;
+            --light-card-bg: #ffffff;
+            --light-sidebar-bg: #f1f5f9;
+            --light-border-color: #e2e8f0;
+            --light-text-primary: #1e293b;
+            --light-text-secondary: #475569;
+            --light-text-muted: #64748b;
+            
+            /* SOCRadar brand colors */
+            --primary-blue: #3b82f6;
+            --primary-blue-hover: #2563eb;
+            --primary-blue-light: rgba(59, 130, 246, 0.1);
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --error-color: #ef4444;
-            --border-color: #374151;
-            --ca-color: #8b5cf6;
-            --k8s-color: #06b6d4;
+            --info-color: #06b6d4;
+            --purple-accent: #8b5cf6;
+            --orange-accent: #f97316;
+            --green-accent: #22c55e;
+            
+            /* Current theme variables */
+            --current-primary-bg: var(--dark-primary-bg);
+            --current-secondary-bg: var(--dark-secondary-bg);
+            --current-card-bg: var(--dark-card-bg);
+            --current-sidebar-bg: var(--dark-sidebar-bg);
+            --current-border-color: var(--dark-border-color);
+            --current-text-primary: var(--dark-text-primary);
+            --current-text-secondary: var(--dark-text-secondary);
+            --current-text-muted: var(--dark-text-muted);
+        }
+
+        [data-theme="light"] {
+            --current-primary-bg: var(--light-primary-bg);
+            --current-secondary-bg: var(--light-secondary-bg);
+            --current-card-bg: var(--light-card-bg);
+            --current-sidebar-bg: var(--light-sidebar-bg);
+            --current-border-color: var(--light-border-color);
+            --current-text-primary: var(--light-text-primary);
+            --current-text-secondary: var(--light-text-secondary);
+            --current-text-muted: var(--light-text-muted);
         }
 
         * {
@@ -30,34 +69,176 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--primary-bg);
-            color: var(--text-primary);
-            line-height: 1.6;
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow-x: hidden;
-            max-width: 100vw;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--current-primary-bg);
+            color: var(--current-text-primary);
+            line-height: 1.6;
+        }
+
+        .dashboard-wrapper {
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
-            background: var(--secondary-bg);
+            background: var(--current-secondary-bg);
             padding: 1rem 2rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--current-border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
 
-        .header h1 {
-            color: var(--accent-color);
-            font-size: 1.8rem;
-            font-weight: 600;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo h1 {
+            color: var(--primary-blue);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.5rem 1rem;
+            color: var(--current-text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary-blue-light);
+            color: var(--primary-blue);
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 1.5rem;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            background: var(--current-primary-bg);
+            border: 1px solid var(--current-border-color);
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            border-radius: 8px;
+            color: var(--current-text-primary);
+            font-size: 0.9rem;
+            width: 250px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px var(--primary-blue-light);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            color: var(--current-text-muted);
+            font-size: 0.9rem;
+        }
+
+        .theme-toggle {
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--current-text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--current-text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-dot.stopped {
+            background: var(--error-color);
+        }
+
+        .status-dot.starting {
+            background: var(--warning-color);
         }
 
         .user-info {
@@ -66,9 +247,33 @@
             gap: 1rem;
         }
 
-        .user-info span {
-            color: var(--text-secondary);
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
             font-size: 0.9rem;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--current-text-primary);
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--current-text-muted);
         }
 
         .btn-logout {
@@ -77,8 +282,11 @@
             text-decoration: none;
             padding: 0.5rem 1rem;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 500;
             transition: all 0.2s;
+            border: none;
+            cursor: pointer;
         }
 
         .btn-logout:hover {
@@ -86,30 +294,79 @@
             transform: translateY(-1px);
         }
 
-        .main-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 2rem;
-            padding: 2rem;
-            height: calc(100vh - 80px);
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
         }
 
         .sidebar {
-            background: var(--secondary-bg);
-            border-radius: 12px;
+            width: 280px;
+            background: var(--current-sidebar-bg);
+            border-right: 1px solid var(--current-border-color);
             padding: 1.5rem;
-            border: 1px solid var(--border-color);
             overflow-y: auto;
+            transition: all 0.3s ease;
         }
 
-        .sidebar h3 {
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-section h3 {
+            color: var(--current-text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
             margin-bottom: 1rem;
-            color: var(--accent-color);
-            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.25rem;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--current-text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: var(--primary-blue-light);
+            color: var(--primary-blue);
+        }
+
+        .sidebar-menu a.active {
+            font-weight: 500;
         }
 
         .info-panel {
-            margin-bottom: 2rem;
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-panel h4 {
+            color: var(--current-text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .info-item {
@@ -117,7 +374,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.5rem 0;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--current-border-color);
         }
 
         .info-item:last-child {
@@ -125,88 +382,51 @@
         }
 
         .info-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+            color: var(--current-text-secondary);
+            font-size: 0.85rem;
         }
 
         .info-value {
-            color: var(--text-primary);
+            color: var(--current-text-primary);
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        .btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            width: 100%;
-            margin-bottom: 0.5rem;
-        }
-
-        .btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn.success { background: var(--success-color); }
-        .btn.warning { background: var(--warning-color); }
-        .btn.danger { background: var(--error-color); }
-        .btn.ca { background: var(--ca-color); }
-        .btn.k8s { background: var(--k8s-color); }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .metric-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+        .main-content {
+            flex: 1;
             padding: 1.5rem;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: var(--current-primary-bg);
         }
 
-        .metric-card h3 {
-            color: var(--accent-color);
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
+        .content-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
         }
 
-        .metric-value {
-            font-size: 2rem;
+        .content-title {
+            font-size: 1.5rem;
             font-weight: 700;
+            color: var(--current-text-primary);
             margin-bottom: 0.5rem;
         }
 
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--border-color);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--accent-color);
-            transition: width 0.3s ease;
+        .content-subtitle {
+            color: var(--current-text-secondary);
+            font-size: 0.9rem;
         }
 
         .tabs {
             display: flex;
-            background: var(--secondary-bg);
-            border-radius: 8px;
-            padding: 0.25rem;
-            margin-bottom: 1rem;
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
         }
 
         .tab {
@@ -214,22 +434,242 @@
             padding: 0.75rem 1rem;
             text-align: center;
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: 8px;
             transition: all 0.2s;
+            white-space: nowrap;
+            min-width: fit-content;
+            font-weight: 500;
+            color: var(--current-text-secondary);
         }
 
         .tab.active {
-            background: var(--accent-color);
+            background: var(--primary-blue);
             color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .tab:hover:not(.active) {
+            background: var(--primary-blue-light);
+            color: var(--primary-blue);
         }
 
         .tab-content {
             display: none;
+            width: 100%;
+            overflow-x: hidden;
         }
 
         .tab-content.active {
             display: block;
         }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .metric-card {
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .metric-card h3 {
+            color: var(--current-text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--current-text-primary);
+        }
+
+        .metric-change {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .metric-change.positive {
+            color: var(--success-color);
+        }
+
+        .metric-change.negative {
+            color: var(--error-color);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--current-border-color);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-blue);
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .chart-card {
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--current-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-btn {
+            background: var(--current-primary-bg);
+            border: 1px solid var(--current-border-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            color: var(--current-text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-btn:hover {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .client-chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+        }
+        
+        .client-chart-item {
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .client-chart-item h4 {
+            margin: 0 0 1rem 0;
+            color: var(--current-text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 280px;
+            position: relative;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .main-chart-container {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .main-chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-blue-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn.secondary {
+            background: var(--current-card-bg);
+            color: var(--current-text-primary);
+            border: 1px solid var(--current-border-color);
+        }
+
+        .btn.secondary:hover {
+            background: var(--current-border-color);
+        }
+
+        .btn.success { background: var(--success-color); }
+        .btn.warning { background: var(--warning-color); }
+        .btn.danger { background: var(--error-color); }
+        .btn.info { background: var(--info-color); }
 
         .notification {
             position: fixed;
@@ -242,6 +682,7 @@
             z-index: 1000;
             transform: translateX(400px);
             transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .notification.show {
@@ -251,186 +692,578 @@
         .notification.success { background: var(--success-color); }
         .notification.error { background: var(--error-color); }
         .notification.warning { background: var(--warning-color); }
-        
-        .client-chart-grid {
+        .notification.info { background: var(--info-color); }
+
+        .stats-overview {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
-            margin-top: 1rem;
-            max-width: 100%;
-            overflow: hidden;
+            margin-bottom: 2rem;
         }
-        
-        .client-chart-item {
-            background: var(--card-bg);
+
+        .stat-item {
+            background: var(--current-card-bg);
+            border: 1px solid var(--current-border-color);
             border-radius: 8px;
             padding: 1rem;
-            border: 1px solid var(--border-color);
-            max-width: 100%;
-            overflow: hidden;
+            text-align: center;
         }
-        
-        .client-chart-item h4 {
-            margin: 0 0 1rem 0;
-            color: var(--text-color);
-            font-size: 1rem;
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
         }
-        
-        .client-chart-item canvas {
-            width: 100% !important;
-            height: 200px !important;
-            max-width: 100%;
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--current-text-muted);
+            margin-top: 0.25rem;
         }
-        
-        .metric-card {
-            max-width: 100%;
-            overflow: hidden;
+
+        .footer {
+            background: var(--current-secondary-bg);
+            border-top: 1px solid var(--current-border-color);
+            padding: 1.5rem 2rem;
+            margin-top: auto;
         }
-        
-        .metric-card canvas {
-            width: 100% !important;
-            height: 300px !important;
-            max-width: 100%;
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        
-        /* Prevent horizontal overflow */
-        * {
-            max-width: 100%;
-            box-sizing: border-box;
+
+        .footer-left {
+            color: var(--current-text-secondary);
+            font-size: 0.9rem;
         }
-        
-        .container, .main-content, .tab-content {
-            max-width: 100%;
-            overflow-x: hidden;
+
+        .footer-right {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-link {
+            color: var(--current-text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-blue);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 260px;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1rem;
+            }
+            
+            .client-chart-grid {
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 1rem;
+            }
+
+            .main-chart-container {
+                height: 350px;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-nav {
+                display: none;
+            }
+
+            .search-input {
+                width: 200px;
+            }
+
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+                border-right: none;
+                border-top: 1px solid var(--current-border-color);
+            }
+            
+            .main-content {
+                order: 1;
+                padding: 1rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .client-chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-chart-container {
+                height: 300px;
+            }
+            
+            .chart-container {
+                height: 220px;
+            }
+
+            .tabs {
+                overflow-x: auto;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-right {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .search-input {
+                width: 150px;
+            }
+            
+            .main-content {
+                padding: 0.75rem;
+            }
+            
+            .main-chart-container {
+                height: 250px;
+            }
+            
+            .chart-container {
+                height: 200px;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <h1><i class="fas fa-brain"></i> FL Enterprise Dashboard</h1>
-        <div class="header-right">
-            <div class="status-indicator">
-                <span>System Status:</span>
-                <div class="status-dot" id="systemStatusDot"></div>
-                <span id="systemStatusText">Running</span>
+<body data-theme="dark">
+    <div class="dashboard-wrapper">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h1>FL Enterprise</h1>
+                </div>
+                <nav class="header-nav">
+                    <a href="#" class="nav-item active">Dashboard</a>
+                    <a href="#" class="nav-item">Analytics</a>
+                    <a href="#" class="nav-item">Reports</a>
+                    <a href="#" class="nav-item">Settings</a>
+                </nav>
             </div>
-            <div class="user-info">
-                <span>Welcome, {{ session.username }}</span>
-                <a href="{{ url_for('logout') }}" class="btn-logout">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="main-container">
-        <div class="sidebar">
-            <div class="info-panel">
-                <h3><i class="fas fa-info-circle"></i> System Information</h3>
-                <div class="info-item">
-                    <span class="info-label">Status:</span>
-                    <span class="info-value" id="systemStatus">Running</span>
+            <div class="header-right">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search...">
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Active Clients:</span>
-                    <span class="info-value" id="activeClients">0</span>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+                <div class="status-indicator">
+                    <span>System:</span>
+                    <div class="status-dot" id="systemStatusDot"></div>
+                    <span id="systemStatusText">Online</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">CA Status:</span>
-                    <span class="info-value" id="caStatus">Checking...</span>
-                </div>
-            </div>
-
-            <div class="info-panel">
-                <h3><i class="fas fa-shield-alt"></i> Security Status</h3>
-                <div class="info-item">
-                    <span class="info-label">Certificates:</span>
-                    <span class="info-value" id="caCertificates">0</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Network:</span>
-                    <span class="info-value" id="networkStatus">Active</span>
-                </div>
-            </div>
-
-            <div class="info-panel">
-                <h3><i class="fas fa-chart-line"></i> Quick Stats</h3>
-                <div class="info-item">
-                    <span class="info-label">CPU:</span>
-                    <span class="info-value" id="quickCpu">0%</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Memory:</span>
-                    <span class="info-value" id="quickMemory">0%</span>
+                <div class="user-info">
+                    <div class="user-avatar">{{ session.username[0].upper() if session.username else 'U' }}</div>
+                    <div class="user-details">
+                        <div class="user-name">{{ session.username or 'User' }}</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="tabs">
-                <div class="tab active" data-tab="overview">Overview</div>
-                <div class="tab" data-tab="monitoring">Monitoring</div>
-                <div class="tab" data-tab="clients">Client Training</div>
-                <div class="tab" data-tab="security">Security</div>
-            </div>
+        <div class="main-layout">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Navigation</h3>
+                    <ul class="sidebar-menu">
+                        <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="#"><i class="fas fa-users"></i> Clients</a></li>
+                        <li><a href="#"><i class="fas fa-brain"></i> Models</a></li>
+                        <li><a href="#"><i class="fas fa-chart-line"></i> Training</a></li>
+                        <li><a href="#"><i class="fas fa-database"></i> Datasets</a></li>
+                    </ul>
+                </div>
 
-            <div class="tab-content active" id="overview">
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <h3><i class="fas fa-microchip"></i> CPU Usage</h3>
-                        <div class="metric-value" id="cpuUsage">0%</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="cpuProgress" style="width: 0%"></div>
-                        </div>
+                <div class="sidebar-section">
+                    <h3>Monitoring</h3>
+                    <ul class="sidebar-menu">
+                        <li><a href="#"><i class="fas fa-heartbeat"></i> System Health</a></li>
+                        <li><a href="#"><i class="fas fa-shield-alt"></i> Security</a></li>
+                        <li><a href="#"><i class="fas fa-bell"></i> Alerts</a></li>
+                        <li><a href="#"><i class="fas fa-history"></i> Logs</a></li>
+                    </ul>
+                </div>
+
+                <div class="info-panel">
+                    <h4><i class="fas fa-info-circle"></i> System Status</h4>
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value" id="systemStatus">Running</span>
                     </div>
-
-                    <div class="metric-card">
-                        <h3><i class="fas fa-memory"></i> Memory Usage</h3>
-                        <div class="metric-value" id="memoryUsage">0%</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="memoryProgress" style="width: 0%"></div>
-                        </div>
+                    <div class="info-item">
+                        <span class="info-label">Active Clients:</span>
+                        <span class="info-value" id="activeClients">0</span>
                     </div>
-
-                    <div class="metric-card">
-                        <h3><i class="fas fa-docker"></i> Docker Containers</h3>
-                        <div class="metric-value" id="dockerContainers">0</div>
+                    <div class="info-item">
+                        <span class="info-label">Training Rounds:</span>
+                        <span class="info-value" id="trainingRounds">0</span>
                     </div>
+                </div>
 
-                    <div class="metric-card">
-                        <h3><i class="fas fa-shield-alt"></i> CA Certificates</h3>
-                        <div class="metric-value" id="caCertificates">0</div>
+                <div class="info-panel">
+                    <h4><i class="fas fa-shield-alt"></i> Security</h4>
+                    <div class="info-item">
+                        <span class="info-label">CA Status:</span>
+                        <span class="info-value" id="caStatus">Active</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Certificates:</span>
+                        <span class="info-value" id="caCertificates">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Network:</span>
+                        <span class="info-value" id="networkStatus">Secure</span>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <h4><i class="fas fa-server"></i> Resources</h4>
+                    <div class="info-item">
+                        <span class="info-label">CPU:</span>
+                        <span class="info-value" id="quickCpu">0%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Memory:</span>
+                        <span class="info-value" id="quickMemory">0%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Storage:</span>
+                        <span class="info-value" id="quickStorage">45%</span>
                     </div>
                 </div>
             </div>
 
-            <div class="tab-content" id="monitoring">
-                <div class="metric-card">
-                    <h3><i class="fas fa-chart-line"></i> System Performance</h3>
-                    <canvas id="performanceChart" height="300"></canvas>
+            <div class="main-content">
+                <div class="content-header">
+                    <div>
+                        <h1 class="content-title">Federated Learning Dashboard</h1>
+                        <p class="content-subtitle">Monitor and manage your distributed machine learning infrastructure</p>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="overview">
+                        <i class="fas fa-tachometer-alt"></i> Overview
+                    </div>
+                    <div class="tab" data-tab="monitoring">
+                        <i class="fas fa-chart-line"></i> Monitoring
+                    </div>
+                    <div class="tab" data-tab="clients">
+                        <i class="fas fa-users"></i> Client Training
+                    </div>
+                    <div class="tab" data-tab="models">
+                        <i class="fas fa-brain"></i> Models
+                    </div>
+                    <div class="tab" data-tab="security">
+                        <i class="fas fa-shield-alt"></i> Security
+                    </div>
+                    <div class="tab" data-tab="settings">
+                        <i class="fas fa-cogs"></i> Settings
+                    </div>
+                </div>
+
+                <div class="tab-content active" id="overview">
+                    <div class="actions-bar">
+                        <button class="btn">
+                            <i class="fas fa-play"></i> Start Training
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-download"></i> Export Model
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-upload"></i> Import Dataset
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div class="stats-overview">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalClients">0</div>
+                            <div class="stat-label">Total Clients</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="activeTraining">0</div>
+                            <div class="stat-label">Active Training</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="completedRounds">0</div>
+                            <div class="stat-label">Completed Rounds</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="modelAccuracy">0%</div>
+                            <div class="stat-label">Model Accuracy</div>
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h3><i class="fas fa-microchip metric-icon"></i> CPU Usage</h3>
+                            <div class="metric-value" id="cpuUsage">0%</div>
+                            <div class="metric-change positive" id="cpuChange">+2.3% from last hour</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="cpuProgress" style="width: 0%; background: var(--primary-blue);"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <h3><i class="fas fa-memory metric-icon"></i> Memory Usage</h3>
+                            <div class="metric-value" id="memoryUsage">0%</div>
+                            <div class="metric-change negative" id="memoryChange">-1.2% from last hour</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="memoryProgress" style="width: 0%; background: var(--success-color);"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <h3><i class="fas fa-docker metric-icon"></i> Active Containers</h3>
+                            <div class="metric-value" id="dockerContainers">0</div>
+                            <div class="metric-change positive" id="containerChange">All containers healthy</div>
+                            <div class="status-badge active" style="margin-top: 0.5rem;">
+                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                Online
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <h3><i class="fas fa-network-wired metric-icon"></i> Network Traffic</h3>
+                            <div class="metric-value" id="networkTraffic">0 MB/s</div>
+                            <div class="metric-change positive" id="networkChange">↑ 15.4 MB/s peak</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%; background: var(--warning-color);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="monitoring">
+                    <div class="actions-bar">
+                        <button class="btn secondary">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-calendar"></i> Set Time Range
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-filter"></i> Filter Metrics
+                        </button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-chart-line"></i> System Performance
+                            </h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn">1H</button>
+                                <button class="chart-btn">6H</button>
+                                <button class="chart-btn">24H</button>
+                                <button class="chart-btn">7D</button>
+                            </div>
+                        </div>
+                        <div class="main-chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-brain"></i> Training Progress
+                            </h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn">Accuracy</button>
+                                <button class="chart-btn">Loss</button>
+                                <button class="chart-btn">Both</button>
+                            </div>
+                        </div>
+                        <div class="main-chart-container">
+                            <canvas id="trainingChart"></canvas>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="metric-card">
-                    <h3><i class="fas fa-brain"></i> Training Progress</h3>
-                    <canvas id="trainingChart" height="300"></canvas>
+                <div class="tab-content" id="clients">
+                    <div class="actions-bar">
+                        <button class="btn">
+                            <i class="fas fa-plus"></i> Add Client
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-sync-alt"></i> Sync All
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-cog"></i> Configure
+                        </button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-users"></i> Individual Client Training Progress
+                            </h3>
+                            <div class="chart-actions">
+                                <button class="chart-btn">Real-time</button>
+                                <button class="chart-btn">Export</button>
+                            </div>
+                        </div>
+                        <div id="clientChartsContainer">
+                            <div class="client-chart-grid" id="clientChartsGrid">
+                                <!-- Client charts will be dynamically generated here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="tab-content" id="clients">
-                <div class="metric-card">
-                    <h3><i class="fas fa-users"></i> Individual Client Training</h3>
-                    <div id="clientChartsContainer">
-                        <div class="client-chart-grid" id="clientChartsGrid">
-                            <!-- Client charts will be dynamically generated here -->
+
+                <div class="tab-content" id="models">
+                    <div class="actions-bar">
+                        <button class="btn">
+                            <i class="fas fa-plus"></i> Create Model
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-upload"></i> Import Model
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-copy"></i> Clone Model
+                        </button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-brain"></i> Model Management
+                            </h3>
+                        </div>
+                        <div style="padding: 2rem; text-align: center; color: var(--current-text-secondary);">
+                            <i class="fas fa-brain" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <h4>Model Management Interface</h4>
+                            <p>Create, train, and deploy federated learning models</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="security">
+                    <div class="actions-bar">
+                        <button class="btn">
+                            <i class="fas fa-key"></i> Generate Certificate
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-shield-alt"></i> Security Scan
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-history"></i> Audit Log
+                        </button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-certificate"></i> Certificate Management
+                            </h3>
+                        </div>
+                        <div id="certStatus" style="padding: 2rem;">
+                            <div style="text-align: center; color: var(--current-text-secondary);">
+                                <i class="fas fa-certificate" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                                <h4>Certificate Authority Status</h4>
+                                <p>Manage SSL/TLS certificates for secure federated learning</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="settings">
+                    <div class="actions-bar">
+                        <button class="btn">
+                            <i class="fas fa-save"></i> Save Configuration
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-undo"></i> Reset to Default
+                        </button>
+                        <button class="btn secondary">
+                            <i class="fas fa-download"></i> Export Settings
+                        </button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-cogs"></i> System Configuration
+                            </h3>
+                        </div>
+                        <div style="padding: 2rem; text-align: center; color: var(--current-text-secondary);">
+                            <i class="fas fa-cogs" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <h4>Configuration Panel</h4>
+                            <p>Adjust system settings and parameters</p>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="tab-content" id="security">
-                <div class="metric-card">
-                    <h3><i class="fas fa-certificate"></i> Certificate Status</h3>
-                    <div id="certStatus">Loading...</div>
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <p>&copy; 2025 FL Enterprise Dashboard. All rights reserved.</p>
+                </div>
+                <div class="footer-right">
+                    <a href="#" class="footer-link">Documentation</a>
+                    <a href="#" class="footer-link">Support</a>
+                    <a href="#" class="footer-link">Privacy Policy</a>
+                    <a href="#" class="footer-link">Terms of Service</a>
                 </div>
             </div>
         </div>
@@ -442,12 +1275,57 @@
         const socket = io();
         let systemStatus = 'stopped';
         
+        // Theme management
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const currentTheme = body.getAttribute('data-theme');
+            
+            if (currentTheme === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Resize charts after theme change
+            setTimeout(resizeAllCharts, 100);
+        }
+
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            body.setAttribute('data-theme', savedTheme);
+            themeIcon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Initializing Dashboard');
-            initializeDashboard();
+            loadTheme();
             setupEventListeners();
-            startMetricsPolling();
             setupTabs();
+            setupResizeHandler();
+            
+            // Delay initialization to ensure containers are ready
+            setTimeout(() => {
+                initializeDashboard();
+                startMetricsPolling();
+            }, 200);
+        });
+
+        // Also initialize when window is fully loaded
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (!trainingChart) {
+                    initializeTrainingChartWithRetry();
+                }
+                resizeAllCharts();
+            }, 500);
         });
 
         function initializeDashboard() {
@@ -456,7 +1334,6 @@
         }
 
         function setupEventListeners() {
-            // No event listeners needed for removed buttons
             setupTabs();
         }
 
@@ -470,6 +1347,32 @@
             });
         }
 
+        function setupResizeHandler() {
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    resizeAllCharts();
+                }, 100);
+            });
+        }
+
+        function resizeAllCharts() {
+            if (trainingChart) {
+                trainingChart.resize();
+            }
+            
+            if (performanceChart) {
+                performanceChart.resize();
+            }
+            
+            Object.values(clientCharts).forEach(chart => {
+                if (chart) {
+                    chart.resize();
+                }
+            });
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
@@ -480,6 +1383,9 @@
                 content.classList.remove('active');
             });
             document.getElementById(tabName).classList.add('active');
+            
+            // Resize charts after tab switch
+            setTimeout(resizeAllCharts, 100);
         }
 
         function updateSystemStatus(status) {
@@ -489,41 +1395,23 @@
             const systemStatusElement = document.getElementById('systemStatus');
             
             statusDot.className = `status-dot ${status}`;
-            statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusText.textContent = status === 'running' ? 'Online' : status.charAt(0).toUpperCase() + status.slice(1);
             if (systemStatusElement) {
                 systemStatusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
             }
         }
 
-
-
-
-
-
-
-
-
         function loadInitialData() {
-            console.log('Loading initial data...');
+            // Initialize charts with retry mechanism
+            initializeTrainingChartWithRetry();
+            initializePerformanceChart();
             
-            // Initialize training chart
-            try {
-                initializeTrainingChart();
-                console.log('Training chart initialized successfully');
-            } catch (error) {
-                console.error('Error initializing training chart:', error);
-            }
-            
-            // Use relative URLs to avoid antivirus blocking
+            // Use relative URLs
             const baseUrl = window.location.origin;
             
             fetch(`${baseUrl}/api/system/status`)
-                .then(response => {
-                    console.log('System status response:', response.status);
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('System status data:', data);
                     updateSystemStatus(data.status);
                     updateClientCount(data.active_clients, data.clients_count);
                     updateCAStatus(data);
@@ -533,12 +1421,8 @@
                 });
             
             fetch(`${baseUrl}/api/metrics/system`)
-                .then(response => {
-                    console.log('System metrics response:', response.status);
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('System metrics data:', data);
                     updateMetrics({ system: data });
                 })
                 .catch(error => {
@@ -546,12 +1430,8 @@
                 });
             
             fetch(`${baseUrl}/api/metrics/clients`)
-                .then(response => {
-                    console.log('Client metrics response:', response.status);
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('Client metrics data:', data);
                     updateClientMetrics(data);
                 })
                 .catch(error => {
@@ -559,18 +1439,14 @@
                 });
             
             // Fetch initial training data
-            console.log('Fetching initial training data...');
             fetch(`${baseUrl}/api/metrics/training`)
                 .then(response => {
-                    console.log('Training metrics response status:', response.status);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Initial training data received:', data);
-                    console.log('Data length:', data.length);
                     updateTrainingChart(data);
                     updateClientCharts(data);
                 })
@@ -580,36 +1456,33 @@
         }
 
         function updateClientCount(activeClients, totalClients) {
-            console.log('Updating client count:', activeClients, totalClients);
             const activeClientsElement = document.getElementById('activeClients');
             const totalClientsElement = document.getElementById('totalClients');
-            
-            console.log('Active clients element:', activeClientsElement);
-            console.log('Total clients element:', totalClientsElement);
+            const activeTrainingElement = document.getElementById('activeTraining');
             
             if (activeClientsElement) {
-                activeClientsElement.textContent = activeClients;
-                console.log('Updated active clients to:', activeClients);
+                activeClientsElement.textContent = activeClients || 0;
             }
             if (totalClientsElement) {
-                totalClientsElement.textContent = totalClients;
-                console.log('Updated total clients to:', totalClients);
+                totalClientsElement.textContent = totalClients || 0;
+            }
+            if (activeTrainingElement) {
+                activeTrainingElement.textContent = activeClients || 0;
             }
         }
 
         function updateMetrics(metrics) {
             if (metrics.system) {
                 // Update main dashboard metrics
-                document.getElementById('cpuUsage').textContent = `${metrics.system.cpu_percent}%`;
-                document.getElementById('cpuProgress').style.width = `${metrics.system.cpu_percent}%`;
+                document.getElementById('cpuUsage').textContent = `${metrics.system.cpu_percent || 0}%`;
+                document.getElementById('cpuProgress').style.width = `${metrics.system.cpu_percent || 0}%`;
                 
-                document.getElementById('memoryUsage').textContent = `${metrics.system.memory_percent}%`;
-                document.getElementById('memoryProgress').style.width = `${metrics.system.memory_percent}%`;
+                document.getElementById('memoryUsage').textContent = `${metrics.system.memory_percent || 0}%`;
+                document.getElementById('memoryProgress').style.width = `${metrics.system.memory_percent || 0}%`;
                 
-                // Update Docker containers count
+                // Update containers count
                 const dockerContainers = document.getElementById('dockerContainers');
                 if (dockerContainers) {
-                    // Count running containers from system data
                     let containerCount = 0;
                     if (metrics.system.containers) {
                         containerCount = Object.keys(metrics.system.containers).length;
@@ -620,8 +1493,15 @@
                 // Update sidebar quick stats
                 const quickCpu = document.getElementById('quickCpu');
                 const quickMemory = document.getElementById('quickMemory');
-                if (quickCpu) quickCpu.textContent = `${metrics.system.cpu_percent}%`;
-                if (quickMemory) quickMemory.textContent = `${metrics.system.memory_percent}%`;
+                if (quickCpu) quickCpu.textContent = `${metrics.system.cpu_percent || 0}%`;
+                if (quickMemory) quickMemory.textContent = `${metrics.system.memory_percent || 0}%`;
+
+                // Update network traffic (mock data)
+                const networkTraffic = document.getElementById('networkTraffic');
+                if (networkTraffic) {
+                    const traffic = Math.random() * 50; // Mock network traffic
+                    networkTraffic.textContent = `${traffic.toFixed(1)} MB/s`;
+                }
             }
         }
 
@@ -630,13 +1510,7 @@
             const caCertificates = document.getElementById('caCertificates');
             
             if (systemData.ca_status === 'running') {
-                caStatus.innerHTML = `
-                    <div style="color: #10b981; margin-bottom: 0.5rem;">✓ Running</div>
-                    <div style="font-size: 0.9rem; color: #a1a1aa;">
-                        CA Service Active
-                    </div>
-                `;
-                // Get certificate count from containers data if available
+                if (caStatus) caStatus.textContent = 'Active';
                 let certCount = 0;
                 if (systemData.containers) {
                     Object.values(systemData.containers).forEach(container => {
@@ -645,15 +1519,10 @@
                         }
                     });
                 }
-                caCertificates.textContent = certCount;
+                if (caCertificates) caCertificates.textContent = certCount;
             } else {
-                caStatus.innerHTML = `
-                    <div style="color: #ef4444; margin-bottom: 0.5rem;">✗ Not Running</div>
-                    <div style="font-size: 0.9rem; color: #a1a1aa;">
-                        CA Service Unavailable
-                    </div>
-                `;
-                caCertificates.textContent = '0';
+                if (caStatus) caStatus.textContent = 'Inactive';
+                if (caCertificates) caCertificates.textContent = '0';
             }
         }
 
@@ -665,67 +1534,156 @@
             }
         }
 
-        // Client training charts
+        // Chart variables
         let clientCharts = {};
         let trainingChart = null;
+        let performanceChart = null;
 
-        function initializeTrainingChart() {
-            console.log('Initializing training chart...');
+        function initializePerformanceChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx) return;
+
+            try {
+                performanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'CPU Usage',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        }, {
+                            label: 'Memory Usage',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing performance chart:', error);
+            }
+        }
+
+        function initializeTrainingChartWithRetry(retries = 5) {
             const ctx = document.getElementById('trainingChart');
             if (!ctx) {
-                console.log('Training chart canvas not found');
+                if (retries > 0) {
+                    setTimeout(() => initializeTrainingChartWithRetry(retries - 1), 200);
+                }
                 return;
             }
             
             if (typeof Chart === 'undefined') {
-                console.error('Chart.js not loaded');
+                if (retries > 0) {
+                    setTimeout(() => initializeTrainingChartWithRetry(retries - 1), 200);
+                }
+                return;
+            }
+
+            const container = ctx.parentElement;
+            const rect = container.getBoundingClientRect();
+            
+            if (rect.width === 0 || rect.height === 0) {
+                if (retries > 0) {
+                    setTimeout(() => initializeTrainingChartWithRetry(retries - 1), 200);
+                }
                 return;
             }
 
             try {
+                initializeTrainingChart();
+            } catch (error) {
+                if (retries > 0) {
+                    setTimeout(() => initializeTrainingChartWithRetry(retries - 1), 200);
+                }
+            }
+        }
+
+        function initializeTrainingChart() {
+            const ctx = document.getElementById('trainingChart');
+            if (!ctx) return;
+
+            try {
                 trainingChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Average Accuracy',
-                        data: [],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    aspectRatio: 2,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 1,
-                            ticks: {
-                                callback: function(value) {
-                                    return (value * 100).toFixed(1) + '%';
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Average Accuracy',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 1,
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value * 100).toFixed(1) + '%';
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    maxTicksLimit: 10
                                 }
                             }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
                         }
                     }
-                }
-            });
+                });
             } catch (error) {
                 console.error('Error initializing training chart:', error);
             }
         }
 
         function updateTrainingChart(trainingData) {
-            console.log('updateTrainingChart called with:', trainingData);
             if (!trainingChart || !trainingData || trainingData.length === 0) {
-                console.log('updateTrainingChart: No chart or no data');
                 return;
             }
 
@@ -735,82 +1693,122 @@
             trainingChart.data.labels = rounds;
             trainingChart.data.datasets[0].data = accuracies;
             trainingChart.update();
+            
+            // Update model accuracy stat
+            const modelAccuracy = document.getElementById('modelAccuracy');
+            if (modelAccuracy && accuracies.length > 0) {
+                const latestAccuracy = accuracies[accuracies.length - 1];
+                modelAccuracy.textContent = `${(latestAccuracy * 100).toFixed(1)}%`;
+            }
+
+            // Update completed rounds
+            const completedRounds = document.getElementById('completedRounds');
+            if (completedRounds) {
+                completedRounds.textContent = rounds.length;
+            }
+
+            // Update training rounds in sidebar
+            const trainingRounds = document.getElementById('trainingRounds');
+            if (trainingRounds) {
+                trainingRounds.textContent = rounds.length;
+            }
         }
 
         function createClientChart(clientId, container) {
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            
             const ctx = document.createElement('canvas');
             ctx.id = `clientChart_${clientId}`;
-            container.appendChild(ctx);
+            chartContainer.appendChild(ctx);
+            container.appendChild(chartContainer);
 
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Accuracy',
-                        data: [],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4
-                    }, {
-                        label: 'Loss',
-                        data: [],
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4,
-                        yAxisID: 'y1'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    aspectRatio: 2,
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            beginAtZero: true,
-                            max: 1,
-                            ticks: {
-                                callback: function(value) {
-                                    return (value * 100).toFixed(1) + '%';
+            try {
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Accuracy',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        }, {
+                            label: 'Loss',
+                            data: [],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.1,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                max: 1,
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value * 100).toFixed(1) + '%';
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                            },
+                            x: {
+                                ticks: {
+                                    maxTicksLimit: 8
                                 }
                             }
                         },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            beginAtZero: true,
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
                         }
                     }
-                }
-            });
-
-            return chart;
+                });
+                return chart;
+            } catch (error) {
+                console.error(`Error creating chart for client ${clientId}:`, error);
+                return null;
+            }
         }
 
         function updateClientCharts(trainingData) {
-            console.log('updateClientCharts called with:', trainingData);
             if (!trainingData || trainingData.length === 0) {
-                console.log('updateClientCharts: No data');
                 return;
             }
 
             const container = document.getElementById('clientChartsGrid');
-            if (!container) return;
+            if (!container) {
+                return;
+            }
 
             // Clear existing charts
             container.innerHTML = '';
+            clientCharts = {};
 
             // Get all unique client IDs from training data
             const clientIds = new Set();
@@ -832,27 +1830,29 @@
                 chartItem.appendChild(title);
 
                 const chart = createClientChart(clientId, chartItem);
-                clientCharts[clientId] = chart;
+                if (chart) {
+                    clientCharts[clientId] = chart;
 
-                // Update chart with data
-                const rounds = [];
-                const accuracies = [];
-                const losses = [];
+                    // Update chart with data
+                    const rounds = [];
+                    const accuracies = [];
+                    const losses = [];
 
-                trainingData.forEach(round => {
-                    if (round.client_metrics && round.client_metrics[clientId]) {
-                        rounds.push(round.round);
-                        accuracies.push(round.client_metrics[clientId].accuracy);
-                        losses.push(round.client_metrics[clientId].loss);
-                    }
-                });
+                    trainingData.forEach(round => {
+                        if (round.client_metrics && round.client_metrics[clientId]) {
+                            rounds.push(round.round);
+                            accuracies.push(round.client_metrics[clientId].accuracy);
+                            losses.push(round.client_metrics[clientId].loss);
+                        }
+                    });
 
-                chart.data.labels = rounds;
-                chart.data.datasets[0].data = accuracies;
-                chart.data.datasets[1].data = losses;
-                chart.update();
+                    chart.data.labels = rounds;
+                    chart.data.datasets[0].data = accuracies;
+                    chart.data.datasets[1].data = losses;
+                    chart.update();
 
-                container.appendChild(chartItem);
+                    container.appendChild(chartItem);
+                }
             });
         }
 
@@ -867,47 +1867,66 @@
                         updateSystemStatus(data.status);
                         updateClientCount(data.active_clients, data.clients_count);
                         updateCAStatus(data);
-                    });
+                    })
+                    .catch(error => console.error('Error fetching system status:', error));
                 
                 // Fetch system metrics
                 fetch(`${baseUrl}/api/metrics/system`)
                     .then(response => response.json())
                     .then(data => {
                         updateMetrics({ system: data });
-                    });
+                        updatePerformanceChart(data);
+                    })
+                    .catch(error => console.error('Error fetching system metrics:', error));
                 
                 // Fetch client metrics
                 fetch(`${baseUrl}/api/metrics/clients`)
                     .then(response => response.json())
                     .then(data => {
                         updateClientMetrics(data);
-                    });
+                    })
+                    .catch(error => console.error('Error fetching client metrics:', error));
                 
                 // Fetch training metrics
-                console.log('Fetching training metrics...');
                 fetch(`${baseUrl}/api/metrics/training`)
                     .then(response => {
-                        console.log('Training metrics response:', response.status);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Training data received:', data);
                         updateTrainingChart(data);
                         updateClientCharts(data);
                     })
-                    .catch(error => {
-                        console.error('Error fetching training metrics:', error);
-                    });
+                    .catch(error => console.error('Error fetching training metrics:', error));
             }, 5000);
+        }
+
+        function updatePerformanceChart(systemData) {
+            if (!performanceChart || !systemData) return;
+
+            const now = new Date().toLocaleTimeString();
+            const cpuUsage = systemData.cpu_percent || 0;
+            const memoryUsage = systemData.memory_percent || 0;
+
+            // Keep only last 20 data points
+            if (performanceChart.data.labels.length >= 20) {
+                performanceChart.data.labels.shift();
+                performanceChart.data.datasets[0].data.shift();
+                performanceChart.data.datasets[1].data.shift();
+            }
+
+            performanceChart.data.labels.push(now);
+            performanceChart.data.datasets[0].data.push(cpuUsage);
+            performanceChart.data.datasets[1].data.push(memoryUsage);
+            performanceChart.update();
         }
 
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            notification.textContent = message;
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message}`;
             
             document.getElementById('notificationContainer').appendChild(notification);
             
@@ -919,12 +1938,104 @@
             }, 3000);
         }
 
+        // Socket.io event handlers
         socket.on('connect', function() {
-            console.log('Connected to FL Enterprise Dashboard');
+            showNotification('Connected to dashboard', 'success');
+        });
+
+        socket.on('disconnect', function() {
+            showNotification('Connection lost', 'warning');
         });
 
         socket.on('metrics_update', function(data) {
             updateMetrics(data);
+        });
+
+        socket.on('training_update', function(data) {
+            updateTrainingChart(data);
+            updateClientCharts(data);
+        });
+
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('.search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    // Implement search logic here
+                });
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K for search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('.search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+            
+            // Ctrl/Cmd + Shift + D for dark mode toggle
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+
+        // Auto-refresh functionality
+        let autoRefreshInterval;
+        function toggleAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                showNotification('Auto-refresh disabled', 'info');
+            } else {
+                autoRefreshInterval = setInterval(() => {
+                    loadInitialData();
+                }, 30000); // Refresh every 30 seconds
+                showNotification('Auto-refresh enabled', 'success');
+            }
+        }
+
+        // Export functionality
+        function exportData(type) {
+            const data = {
+                timestamp: new Date().toISOString(),
+                systemStatus: systemStatus,
+                metrics: {
+                    cpu: document.getElementById('cpuUsage')?.textContent,
+                    memory: document.getElementById('memoryUsage')?.textContent,
+                    containers: document.getElementById('dockerContainers')?.textContent
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fl-dashboard-${type}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification(`${type} data exported successfully`, 'success');
+        }
+
+        // Add event listeners for action buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers for buttons (these would connect to actual functionality)
+            document.querySelectorAll('.btn').forEach(btn => {
+                if (!btn.onclick && !btn.classList.contains('btn-logout')) {
+                    btn.addEventListener('click', function() {
+                        const text = this.textContent.trim();
+                        showNotification(`${text} clicked - functionality would be implemented here`, 'info');
+                    });
+                }
+            });
         });
     </script>
 </body>
