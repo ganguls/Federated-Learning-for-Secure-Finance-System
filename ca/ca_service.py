@@ -20,32 +20,71 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-# Initialize CA
+# Initialize CA and start time
 ca = CentralAuthority()
+start_time = time.time()
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'service': 'central-authority',
-        'timestamp': time.time()
-    })
+    try:
+        # Check if CA is properly initialized
+        ca_status = ca.get_ca_status()
+        if ca_status.get('ca_initialized', False):
+            return jsonify({
+                'status': 'healthy',
+                'service': 'central-authority',
+                'ca_initialized': True,
+                'active_certificates': ca_status.get('active_certificates', 0),
+                'timestamp': time.time()
+            })
+        else:
+            return jsonify({
+                'status': 'unhealthy',
+                'service': 'central-authority',
+                'ca_initialized': False,
+                'error': 'CA not properly initialized',
+                'timestamp': time.time()
+            }), 503
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'service': 'central-authority',
+            'error': str(e),
+            'timestamp': time.time()
+        }), 503
 
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    """Metrics endpoint for monitoring"""
+    """Prometheus metrics endpoint"""
     try:
         status = ca.get_ca_status()
-        return jsonify({
-            'status': 'healthy',
-            'service': 'central-authority',
-            'certificates_count': len(ca.list_certificates()),
-            'timestamp': time.time()
-        })
+        certificates = ca.list_certificates()
+        
+        # Generate Prometheus format metrics
+        metrics_text = f"""# HELP ca_certificates_total Total number of certificates issued
+# TYPE ca_certificates_total counter
+ca_certificates_total {len(certificates)}
+
+# HELP ca_certificates_active Number of active certificates
+# TYPE ca_certificates_active gauge
+ca_certificates_active {status.get('active_certificates', len(certificates))}
+
+# HELP ca_uptime_seconds CA service uptime in seconds
+# TYPE ca_uptime_seconds counter
+ca_uptime_seconds {time.time() - start_time}
+
+# HELP ca_service_healthy CA service health status (1=healthy, 0=unhealthy)
+# TYPE ca_service_healthy gauge
+ca_service_healthy 1
+"""
+        
+        from flask import Response
+        return Response(metrics_text, mimetype='text/plain')
     except Exception as e:
-        logger.error(f"Error getting metrics: {e}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error generating metrics: {e}")
+        from flask import Response
+        return Response("# Error generating metrics\n", mimetype='text/plain'), 500
 
 @app.route('/status', methods=['GET'])
 def get_status():

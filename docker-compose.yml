@@ -32,6 +32,7 @@ services:
       - PYTHONPATH=/app
       - FLASK_ENV=production
       - DASHBOARD_PORT=5000
+      - CA_URL=http://ca:9000
     networks:
       - fl-network
     depends_on:
@@ -52,8 +53,10 @@ services:
     environment:
       - PYTHONPATH=/app
       - SERVER_PORT=8080
-      - MIN_CLIENTS=5
+      - MIN_CLIENTS=10
       - NUM_ROUNDS=10
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
     networks:
       - fl-network
     command: python server.py
@@ -72,6 +75,8 @@ services:
       - PYTHONPATH=/app
       - CLIENT_ID=1
       - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
     depends_on:
       - server
       - ca
@@ -92,6 +97,8 @@ services:
       - PYTHONPATH=/app
       - CLIENT_ID=2
       - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
     depends_on:
       - server
       - ca
@@ -112,6 +119,8 @@ services:
       - PYTHONPATH=/app
       - CLIENT_ID=3
       - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
     depends_on:
       - server
       - ca
@@ -132,6 +141,8 @@ services:
       - PYTHONPATH=/app
       - CLIENT_ID=4
       - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
     depends_on:
       - server
       - ca
@@ -152,12 +163,124 @@ services:
       - PYTHONPATH=/app
       - CLIENT_ID=5
       - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
     depends_on:
       - server
       - ca
     networks:
       - fl-network
     command: python client.py 5
+    restart: unless-stopped
+
+  client6:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client6:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=6
+      - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 6
+    restart: unless-stopped
+
+  client7:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client7:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=7
+      - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 7
+    restart: unless-stopped
+
+  client8:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client8:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=8
+      - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 8
+    restart: unless-stopped
+
+  client9:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client9:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=9
+      - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 9
+    restart: unless-stopped
+
+  client10:
+    build: ./clients
+    volumes:
+      - ./Datapre:/app/data:ro
+      - ./clients/client10:/app/client:ro
+      - ca-certs:/app/certs:ro
+      - client-logs:/app/logs
+    working_dir: /app/client
+    environment:
+      - PYTHONPATH=/app
+      - CLIENT_ID=10
+      - SERVER_ADDRESS=server:8080
+      - CA_URL=http://ca:9000
+      - ENABLE_CERTIFICATES=true
+    depends_on:
+      - server
+      - ca
+    networks:
+      - fl-network
+    command: python client.py 10
     restart: unless-stopped
 
   # Monitoring and Logging

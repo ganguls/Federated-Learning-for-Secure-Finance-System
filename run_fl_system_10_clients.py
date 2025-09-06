@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Federated Learning System for Loan Prediction
-Main execution script
+Federated Learning System for Loan Prediction - 10 Clients Version
+Main execution script that runs the server and all 10 clients
 """
 
 import os
@@ -41,10 +41,10 @@ def check_data_files():
         print("Data directory not found. Running data preprocessing...")
         return run_data_preprocessing()
     
-    # Check if we have at least 10 client data files
+    # Check if we have all 10 client data files
     client_files = list(data_path.glob("client_*.csv"))
     if len(client_files) < 10:
-        print(f"Only {len(client_files)} client data files found. Need at least 10.")
+        print(f"Only {len(client_files)} client data files found. Need all 10.")
         return run_data_preprocessing()
     
     print(f"Found {len(client_files)} client data files.")
@@ -102,13 +102,13 @@ def start_server():
         print(f"Error starting server: {e}")
         return None
 
-def start_clients(num_clients=10):
-    """Start the federated learning clients"""
-    print(f"Starting {num_clients} clients...")
+def start_all_clients():
+    """Start all 10 federated learning clients"""
+    print("Starting all 10 clients...")
     
     client_processes = []
     
-    for client_id in range(1, num_clients + 1):
+    for client_id in range(1, 11):  # All 10 clients
         client_dir = Path(f"clients/client{client_id}")
         client_script = client_dir / "client.py"
         
@@ -136,7 +136,7 @@ def start_clients(num_clients=10):
 def monitor_training(server_process, client_processes, max_rounds=5):
     """Monitor the training process"""
     print(f"Monitoring training for {max_rounds} rounds...")
-    print("=" * 50)
+    print("=" * 60)
     
     round_count = 0
     start_time = time.time()
@@ -192,9 +192,9 @@ def cleanup(server_process, client_processes):
 
 def main():
     """Main execution function"""
-    print("=" * 60)
-    print("Federated Learning System for Loan Prediction")
-    print("=" * 60)
+    print("=" * 70)
+    print("Federated Learning System for Loan Prediction - 10 Clients")
+    print("=" * 70)
     
     # Check dependencies
     if not check_dependencies():
@@ -211,8 +211,8 @@ def main():
         print("Failed to start server. Exiting.")
         return
     
-    # Start clients
-    client_processes = start_clients(num_clients=10)
+    # Start all 10 clients
+    client_processes = start_all_clients()
     if not client_processes:
         print("Failed to start any clients. Exiting.")
         cleanup(server_process, [])
@@ -231,7 +231,7 @@ def main():
         # Cleanup
         cleanup(server_process, client_processes)
     
-    print("Federated learning system completed!")
+    print("Federated learning system with 10 clients completed!")
 
 if __name__ == "__main__":
     main()

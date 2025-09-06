@@ -11,6 +11,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import docker
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -151,13 +152,13 @@ class FLDashboard:
         import random
         import time
         
-        # Generate sample data for 3 rounds with 5 clients
+        # Generate sample data for 3 rounds with 10 clients
         sample_data = []
         for round_num in range(1, 4):
             client_metrics = {}
             accuracies = []
             
-            for client_id in range(1, 6):
+            for client_id in range(1, 11):  # Changed from 6 to 11 to include all 10 clients
                 # Generate realistic accuracy values (improving over rounds)
                 base_accuracy = 0.6 + (round_num - 1) * 0.1 + random.uniform(-0.05, 0.05)
                 accuracy = max(0.5, min(0.95, base_accuracy))
@@ -196,23 +197,28 @@ class FLDashboard:
             fl_containers = {}
             
             for container in containers:
-                # Check if container is part of FL system
-                if any(name in container.name for name in ['flsystem', 'fl-enterprise']):
+                # Check if container is part of FL system (more flexible matching)
+                container_name = container.name.lower()
+                if any(name in container_name for name in ['flsystem', 'fl-enterprise', 'client', 'server', 'ca', 'dashboard']):
                     container_type = 'unknown'
                     client_id = None
                     
-                    if 'client' in container.name:
+                    if 'client' in container_name:
                         container_type = 'client'
-                        # Extract client ID from container name
+                        # Extract client ID from container name (handle multiple formats)
                         try:
-                            client_id = int(container.name.split('client')[1].split('-')[0])
+                            # Try different patterns: client1, client-1, fl-system-client1, etc.
+                            import re
+                            match = re.search(r'client(\d+)', container_name)
+                            if match:
+                                client_id = int(match.group(1))
                         except:
                             pass
-                    elif 'server' in container.name:
+                    elif 'server' in container_name:
                         container_type = 'server'
-                    elif 'ca' in container.name:
+                    elif 'ca' in container_name:
                         container_type = 'ca'
-                    elif 'dashboard' in container.name:
+                    elif 'dashboard' in container_name:
                         container_type = 'dashboard'
                     
                     fl_containers[container.name] = {
@@ -385,6 +391,64 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
 
+@app.route('/api/debug/containers')
+def debug_containers():
+    """Debug endpoint to show all detected containers"""
+    containers = dashboard.get_docker_containers()
+    return jsonify({
+        'containers': containers,
+        'client_count': len([c for c in containers.values() if c['type'] == 'client']),
+        'active_clients': len([c for c in containers.values() if c['type'] == 'client' and c['status'] == 'running']),
+        'docker_available': dashboard.docker_client is not None
+    })
+
+@app.route('/api/ca/status')
+def get_ca_status():
+    """Get CA service status"""
+    try:
+        ca_url = os.environ.get('CA_URL', 'http://ca:9000')
+        response = requests.get(f"{ca_url}/status", timeout=5)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'status': 'error', 'message': 'CA service unavailable'}), response.status_code
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/ca/certificates')
+def list_ca_certificates():
+    """List all certificates from CA"""
+    try:
+        ca_url = os.environ.get('CA_URL', 'http://ca:9000')
+        response = requests.get(f"{ca_url}/certificates", timeout=5)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'error': 'CA service unavailable'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ca/certificates/generate', methods=['POST'])
+def generate_certificate():
+    """Generate a new client certificate"""
+    try:
+        ca_url = os.environ.get('CA_URL', 'http://ca:9000')
+        data = request.get_json()
+        response = requests.post(f"{ca_url}/certificates/generate", json=data, timeout=10)
+        return jsonify(response.json()), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ca/certificates/<client_id>/validate')
+def validate_certificate(client_id):
+    """Validate a client certificate"""
+    try:
+        ca_url = os.environ.get('CA_URL', 'http://ca:9000')
+        response = requests.get(f"{ca_url}/certificates/{client_id}/validate", timeout=5)
+        return jsonify(response.json()), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/test')
 def test_page():
     """Simple test page to verify Flask is working"""
@@ -413,6 +477,65 @@ def logout():
     """Logout and clear session"""
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/metrics')
+def metrics_endpoint():
+    """Prometheus metrics endpoint for dashboard"""
+    try:
+        # Get system metrics
+        try:
+            system_metrics = dashboard.get_system_metrics()
+            if not isinstance(system_metrics, dict):
+                system_metrics = {}
+        except:
+            system_metrics = {}
+            
+        try:
+            client_metrics = dashboard.get_client_metrics()
+            if not isinstance(client_metrics, dict):
+                client_metrics = {}
+        except:
+            client_metrics = {}
+            
+        try:
+            training_metrics = dashboard.get_training_metrics()
+            if not isinstance(training_metrics, dict):
+                training_metrics = {}
+        except:
+            training_metrics = {}
+        
+        # Generate Prometheus format metrics
+        metrics_text = f"""# HELP dashboard_clients_total Total number of clients
+# TYPE dashboard_clients_total gauge
+dashboard_clients_total {client_metrics.get('total_clients', 0)}
+
+# HELP dashboard_clients_active Number of active clients
+# TYPE dashboard_clients_active gauge
+dashboard_clients_active {client_metrics.get('active_clients', 0)}
+
+# HELP dashboard_training_rounds_total Total training rounds completed
+# TYPE dashboard_training_rounds_total counter
+dashboard_training_rounds_total {training_metrics.get('rounds_completed', 0)}
+
+# HELP dashboard_system_cpu_percent CPU usage percentage
+# TYPE dashboard_system_cpu_percent gauge
+dashboard_system_cpu_percent {system_metrics.get('cpu_percent', 0)}
+
+# HELP dashboard_system_memory_percent Memory usage percentage
+# TYPE dashboard_system_memory_percent gauge
+dashboard_system_memory_percent {system_metrics.get('memory_percent', 0)}
+
+# HELP dashboard_uptime_seconds Dashboard uptime in seconds
+# TYPE dashboard_uptime_seconds counter
+dashboard_uptime_seconds {time.time() - getattr(dashboard, 'start_time', time.time())}
+"""
+        
+        from flask import Response
+        return Response(metrics_text, mimetype='text/plain')
+    except Exception as e:
+        logger.error(f"Error generating dashboard metrics: {e}")
+        from flask import Response
+        return Response("# Error generating metrics\n", mimetype='text/plain'), 500
 
 def background_metrics_collector():
     """Background task to collect metrics"""

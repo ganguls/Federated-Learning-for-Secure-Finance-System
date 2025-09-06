@@ -22,7 +22,11 @@ class LoanClient(fl.client.NumPyClient):
     
     def load_data(self):
         """Load client-specific data"""
-        data_path = f"/app/data/FL_clients/client_{self.client_id}.csv"
+        # Try Docker path first, then local path
+        docker_path = f"/app/data/FL_clients/client_{self.client_id}.csv"
+        local_path = f"../../Datapre/FL_clients/client_{self.client_id}.csv"
+        
+        data_path = docker_path if os.path.exists(docker_path) else local_path
         if os.path.exists(data_path):
             df = pd.read_csv(data_path)
             print(f"Client {self.client_id}: Loaded {len(df)} samples")
@@ -94,10 +98,13 @@ class LoanClient(fl.client.NumPyClient):
         recall = recall_score(self.y_test, y_pred, zero_division=0)
         f1 = f1_score(self.y_test, y_pred, zero_division=0)
         
+        # Return loss (1 - accuracy), num_examples, metrics dict
+        loss = 1.0 - float(accuracy)
         return (
-            float(accuracy),
+            loss,
             len(self.X_test),
             {
+                "accuracy": float(accuracy),
                 "precision": float(precision),
                 "recall": float(recall),
                 "f1_score": float(f1),
@@ -115,10 +122,22 @@ def main():
     client = LoanClient(client_id)
     
     # Start Flower client
-    fl.client.start_numpy_client(
-        server_address="server:8080",  # Use Docker service name
-        client=client
-    )
+    # Try Docker service name first, then localhost
+    server_addresses = ["server:8080", "localhost:8080"]
+    
+    for server_address in server_addresses:
+        try:
+            print(f"Attempting to connect to {server_address}...")
+            fl.client.start_numpy_client(
+                server_address=server_address,
+                client=client
+            )
+            break
+        except Exception as e:
+            print(f"Failed to connect to {server_address}: {e}")
+            if server_address == server_addresses[-1]:
+                print("Failed to connect to all server addresses")
+                raise
 
 if __name__ == "__main__":
     main()

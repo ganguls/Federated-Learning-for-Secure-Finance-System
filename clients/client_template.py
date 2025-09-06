@@ -7,6 +7,8 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import os
 import sys
+import requests
+from pathlib import Path
 
 class LoanClient(fl.client.NumPyClient):
     def __init__(self, client_id):
@@ -17,12 +19,20 @@ class LoanClient(fl.client.NumPyClient):
         self.y_train = None
         self.X_test = None
         self.y_test = None
+        self.ca_url = os.getenv("CA_URL", "http://ca:9000")
+        self.certificate_enabled = os.getenv("ENABLE_CERTIFICATES", "true").lower() == "true"
         self.load_data()
         self.initialize_model()
+        if self.certificate_enabled:
+            self.ensure_certificate()
     
     def load_data(self):
         """Load client-specific data"""
-        data_path = f"/app/data/FL_clients/client_{self.client_id}.csv"
+        # Try Docker path first, then local path
+        docker_path = f"/app/data/FL_clients/client_{self.client_id}.csv"
+        local_path = f"../Datapre/FL_clients/client_{self.client_id}.csv"
+        
+        data_path = docker_path if os.path.exists(docker_path) else local_path
         if os.path.exists(data_path):
             df = pd.read_csv(data_path)
             print(f"Client {self.client_id}: Loaded {len(df)} samples")
@@ -61,6 +71,40 @@ class LoanClient(fl.client.NumPyClient):
         self.model.intercept_ = np.zeros(1)
         self.model.classes_ = np.array([0, 1])
     
+    def ensure_certificate(self):
+        """Ensure client has a valid certificate from CA"""
+        try:
+            # Check if certificate already exists and is valid
+            response = requests.get(
+                f"{self.ca_url}/certificates/{self.client_id}/validate",
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("valid", False):
+                    print(f"Client {self.client_id}: Certificate is valid")
+                    return
+            
+            # Generate new certificate if not valid
+            print(f"Client {self.client_id}: Requesting new certificate...")
+            response = requests.post(
+                f"{self.ca_url}/certificates/generate",
+                json={"client_id": str(self.client_id), "permissions": "standard"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Client {self.client_id}: Certificate generated successfully")
+                print(f"  Certificate path: {result.get('certificate_path', 'N/A')}")
+            else:
+                print(f"Client {self.client_id}: Failed to generate certificate - HTTP {response.status_code}")
+                
+        except Exception as e:
+            print(f"Client {self.client_id}: Certificate management error: {e}")
+            print("Continuing without certificate validation...")
+    
     def get_parameters(self, config):
         """Get model parameters"""
         return [self.model.coef_, self.model.intercept_]
@@ -94,10 +138,13 @@ class LoanClient(fl.client.NumPyClient):
         recall = recall_score(self.y_test, y_pred, zero_division=0)
         f1 = f1_score(self.y_test, y_pred, zero_division=0)
         
+        # Return loss (1 - accuracy), num_examples, metrics dict
+        loss = 1.0 - float(accuracy)
         return (
-            float(accuracy),
+            loss,
             len(self.X_test),
             {
+                "accuracy": float(accuracy),
                 "precision": float(precision),
                 "recall": float(recall),
                 "f1_score": float(f1),
@@ -119,10 +166,22 @@ def main():
     client = LoanClient(client_id)
     
     # Start Flower client
-    fl.client.start_numpy_client(
-        server_address="server:8080",  # Use Docker service name
-        client=client
-    )
+    # Try Docker service name first, then localhost
+    server_addresses = ["server:8080", "localhost:8080"]
+    
+    for server_address in server_addresses:
+        try:
+            print(f"Attempting to connect to {server_address}...")
+            fl.client.start_numpy_client(
+                server_address=server_address,
+                client=client
+            )
+            break
+        except Exception as e:
+            print(f"Failed to connect to {server_address}: {e}")
+            if server_address == server_addresses[-1]:
+                print("Failed to connect to all server addresses")
+                raise
 
 if __name__ == "__main__":
     main()

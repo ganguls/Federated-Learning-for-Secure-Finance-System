@@ -349,19 +349,34 @@ class CentralAuthority:
             if datetime.utcnow() > cert.not_valid_after:
                 return {"valid": False, "reason": "Certificate expired"}
             
-            # Verify with CA
+            # Verify certificate with CA
             with open(self.ca_cert_path, "rb") as f:
                 ca_cert = x509.load_pem_x509_certificate(f.read())
             
             try:
-                ca_cert.public_key().verify(
+                # Proper certificate signature verification using cryptography library
+                from cryptography.hazmat.primitives.asymmetric import padding
+                ca_public_key = ca_cert.public_key()
+                
+                # Verify the certificate signature against the CA's public key
+                ca_public_key.verify(
                     cert.signature,
                     cert.tbs_certificate_bytes,
                     padding.PKCS1v15(),
                     cert.signature_hash_algorithm
                 )
                 signature_valid = True
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Certificate signature verification failed: {e}")
+                signature_valid = False
+            
+            # Additional validation: Check if certificate was issued by our CA
+            try:
+                if cert.issuer != ca_cert.subject:
+                    logger.warning(f"Certificate issuer mismatch for client {client_id}")
+                    signature_valid = False
+            except Exception as e:
+                logger.warning(f"Certificate issuer check failed: {e}")
                 signature_valid = False
             
             conn.close()
