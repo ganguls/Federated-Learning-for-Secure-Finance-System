@@ -1014,6 +1014,9 @@
                     <div class="tab" data-tab="settings">
                         <i class="fas fa-cogs"></i> Settings
                     </div>
+                    <div class="tab" data-tab="demo">
+                        <i class="fas fa-flask"></i> Demo
+                    </div>
                 </div>
 
                 <div class="tab-content active" id="overview">
@@ -1248,6 +1251,72 @@
                             <i class="fas fa-cogs" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
                             <h4>Configuration Panel</h4>
                             <p>Adjust system settings and parameters</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="demo">
+                    <div class="actions-bar">
+                        <button class="btn danger" onclick="resetAllClients()">
+                            <i class="fas fa-undo"></i> Reset All Clients
+                        </button>
+                        <button class="btn secondary" onclick="refreshDemoData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn secondary" onclick="simulateAttack()">
+                            <i class="fas fa-bug"></i> Simulate Attack
+                        </button>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-flask"></i> Malicious Client Simulation
+                            </h3>
+                            <div class="chart-controls">
+                                <span class="status-indicator">
+                                    <span class="status-text" id="demo-status">Ready</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <p style="margin-bottom: 1.5rem; color: var(--current-text-secondary);">
+                                Interactive demonstration of federated learning with malicious clients. 
+                                Toggle clients between normal and malicious behavior to observe the system's defense mechanisms.
+                            </p>
+                            
+                            <div class="demo-controls" style="display: flex; gap: 2rem; margin-bottom: 2rem; padding: 1rem; background: var(--current-card-bg); border-radius: 8px;">
+                                <div class="info-item">
+                                    <span class="label" style="color: var(--current-text-secondary);">Total Clients:</span>
+                                    <span class="value" id="total-clients" style="font-weight: bold; color: var(--primary-blue);">10</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label" style="color: var(--current-text-secondary);">Malicious Clients:</span>
+                                    <span class="value danger" id="malicious-count" style="font-weight: bold; color: #e74c3c;">0</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label" style="color: var(--current-text-secondary);">Defense Status:</span>
+                                    <span class="value success" id="defense-status" style="font-weight: bold; color: #27ae60;">Active</span>
+                                </div>
+                            </div>
+                            
+                            <div class="client-table-container" style="overflow-x: auto;">
+                                <table class="client-table" id="demo-clients-table" style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: var(--current-card-bg); border-bottom: 2px solid var(--current-border);">
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Client ID</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Status</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Accuracy</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Loss</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Labels Flipped</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="demo-clients-tbody">
+                                        <!-- Client rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2032,11 +2101,206 @@
                 if (!btn.onclick && !btn.classList.contains('btn-logout')) {
                     btn.addEventListener('click', function() {
                         const text = this.textContent.trim();
-                        showNotification(`${text} clicked - functionality would be implemented here`, 'info');
+                        if (!text.includes('Reset All') && !text.includes('Refresh') && !text.includes('Simulate')) {
+                            showNotification(`${text} clicked - functionality would be implemented here`, 'info');
+                        }
                     });
                 }
             });
         });
+
+        // Demo Tab Functions
+        let demoData = [];
+        let demoUpdateInterval;
+
+        function refreshDemoData() {
+            fetch('/api/demo/clients')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.clients) {
+                        demoData = data.clients;
+                        updateDemoTable();
+                        updateDemoSummary();
+                        showNotification('Demo data refreshed successfully', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing demo data:', error);
+                    showNotification('Failed to refresh demo data', 'error');
+                });
+        }
+
+        function updateDemoTable() {
+            const tbody = document.getElementById('demo-clients-tbody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            
+            demoData.forEach(client => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid var(--current-border)';
+                
+                const statusBadge = client.is_malicious 
+                    ? '<span style="background: #e74c3c; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> Malicious</span>'
+                    : '<span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;"><i class="fas fa-check"></i> Normal</span>';
+                
+                const toggleButtonClass = client.is_malicious ? 'btn danger' : 'btn secondary';
+                const toggleButtonText = client.is_malicious ? 'Set Normal' : 'Set Malicious';
+                const toggleButtonIcon = client.is_malicious ? 'fas fa-shield' : 'fas fa-bug';
+                
+                row.innerHTML = `
+                    <td style="padding: 12px; font-weight: bold; color: var(--primary-blue);">Client ${client.client_id}</td>
+                    <td style="padding: 12px;">${statusBadge}</td>
+                    <td style="padding: 12px;">${(client.accuracy * 100).toFixed(2)}%</td>
+                    <td style="padding: 12px;">${client.loss.toFixed(4)}</td>
+                    <td style="padding: 12px;">${client.is_malicious ? 'All labels' : 'None'}</td>
+                    <td style="padding: 12px;">
+                        <button class="${toggleButtonClass}" onclick="toggleClientStatus(${client.client_id})" style="padding: 6px 12px; font-size: 0.9em;">
+                            <i class="${toggleButtonIcon}"></i> ${toggleButtonText}
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateDemoSummary() {
+            const maliciousCount = demoData.filter(client => client.is_malicious).length;
+            document.getElementById('malicious-count').textContent = maliciousCount;
+            document.getElementById('total-clients').textContent = demoData.length;
+            
+            // Update defense status based on malicious client count
+            const defenseStatus = document.getElementById('defense-status');
+            if (maliciousCount === 0) {
+                defenseStatus.textContent = 'Active';
+                defenseStatus.style.color = '#27ae60';
+            } else if (maliciousCount <= 3) {
+                defenseStatus.textContent = 'Monitoring';
+                defenseStatus.style.color = '#f39c12';
+            } else {
+                defenseStatus.textContent = 'Alert';
+                defenseStatus.style.color = '#e74c3c';
+            }
+        }
+
+        function toggleClientStatus(clientId) {
+            document.getElementById('demo-status').textContent = 'Updating...';
+            
+            fetch(`/api/demo/toggle/${clientId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const statusText = data.is_malicious ? 'malicious' : 'normal';
+                    showNotification(`Client ${clientId} set to ${statusText}`, 'success');
+                    refreshDemoData();
+                } else {
+                    showNotification(`Failed to toggle client ${clientId}: ${data.error}`, 'error');
+                }
+                document.getElementById('demo-status').textContent = 'Ready';
+            })
+            .catch(error => {
+                console.error('Error toggling client:', error);
+                showNotification(`Error toggling client ${clientId}`, 'error');
+                document.getElementById('demo-status').textContent = 'Ready';
+            });
+        }
+
+        function resetAllClients() {
+            if (!confirm('Are you sure you want to reset all clients to normal status?')) {
+                return;
+            }
+            
+            document.getElementById('demo-status').textContent = 'Resetting...';
+            
+            fetch('/api/demo/reset_all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    refreshDemoData();
+                } else {
+                    showNotification(`Failed to reset clients: ${data.error}`, 'error');
+                }
+                document.getElementById('demo-status').textContent = 'Ready';
+            })
+            .catch(error => {
+                console.error('Error resetting clients:', error);
+                showNotification('Error resetting clients', 'error');
+                document.getElementById('demo-status').textContent = 'Ready';
+            });
+        }
+
+        function simulateAttack() {
+            // Simulate a Byzantine attack by making 30% of clients malicious
+            const clientCount = demoData.length;
+            const attackCount = Math.ceil(clientCount * 0.3);
+            const normalClients = demoData.filter(client => !client.is_malicious);
+            
+            if (normalClients.length === 0) {
+                showNotification('All clients are already malicious', 'info');
+                return;
+            }
+            
+            if (!confirm(`This will make ${Math.min(attackCount, normalClients.length)} clients malicious. Continue?`)) {
+                return;
+            }
+            
+            document.getElementById('demo-status').textContent = 'Simulating Attack...';
+            
+            // Randomly select clients to make malicious
+            const clientsToAttack = normalClients
+                .sort(() => Math.random() - 0.5)
+                .slice(0, Math.min(attackCount, normalClients.length));
+            
+            let completed = 0;
+            clientsToAttack.forEach(client => {
+                setTimeout(() => {
+                    toggleClientStatus(client.client_id);
+                    completed++;
+                    if (completed === clientsToAttack.length) {
+                        setTimeout(() => {
+                            document.getElementById('demo-status').textContent = 'Ready';
+                            showNotification(`Attack simulation complete - ${clientsToAttack.length} clients compromised`, 'warning');
+                        }, 1000);
+                    }
+                }, Math.random() * 2000); // Stagger the attacks
+            });
+        }
+
+        // Auto-refresh demo data when demo tab is active
+        function startDemoAutoRefresh() {
+            if (demoUpdateInterval) {
+                clearInterval(demoUpdateInterval);
+            }
+            demoUpdateInterval = setInterval(() => {
+                const demoTab = document.getElementById('demo');
+                if (demoTab && demoTab.classList.contains('active')) {
+                    refreshDemoData();
+                }
+            }, 5000); // Refresh every 5 seconds
+        }
+
+        // Override switchTab to handle demo tab
+        const originalSwitchTab = switchTab;
+        switchTab = function(tabName) {
+            originalSwitchTab(tabName);
+            if (tabName === 'demo') {
+                refreshDemoData();
+                startDemoAutoRefresh();
+            }
+        };
+
     </script>
 </body>
 </html>

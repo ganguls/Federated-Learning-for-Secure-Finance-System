@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 class LoanServerStrategy(FedAvg):
-    """Custom federated averaging strategy for loan prediction with certificate validation"""
+    """Custom federated averaging strategy with malicious client detection and defense"""
     
     def __init__(self, ca_url: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,6 +24,12 @@ class LoanServerStrategy(FedAvg):
         self.client_metrics = {}
         self.ca_url = ca_url or "http://ca:9000"
         self.certificate_validation_enabled = bool(ca_url)
+        
+        # Defense mechanism components
+        self.malicious_clients = set()  # Detected malicious clients
+        self.client_update_history = {}  # Track client update patterns
+        self.defense_threshold = 0.3  # Threshold for detecting anomalies
+        self.clustering_enabled = True  # Enable K-means clustering defense
     
     def validate_client_certificate(self, client_id: str) -> bool:
         """Validate client certificate with CA service"""
@@ -44,6 +50,99 @@ class LoanServerStrategy(FedAvg):
         except Exception as e:
             print(f"Error validating certificate for client {client_id}: {e}")
             return False
+    
+    def detect_malicious_clients(self, results):
+        """Detect malicious clients using clustering and statistical analysis"""
+        if not results or len(results) < 3:
+            return set()
+        
+        # Extract client updates and metrics
+        client_updates = []
+        client_ids = []
+        
+        for result in results:
+            if len(result) >= 3:
+                parameters, metrics, num_examples = result[0], result[1], result[2]
+                
+                # Extract client info from metrics
+                if isinstance(metrics, dict):
+                    client_id = metrics.get("client_id", "unknown")
+                    is_malicious = metrics.get("is_malicious", False)
+                    labels_flipped = metrics.get("labels_flipped", 0)
+                    
+                    # Store client information
+                    client_ids.append(client_id)
+                    
+                    # Track malicious behavior
+                    if is_malicious or labels_flipped > 0:
+                        print(f"🚨 Detected malicious behavior from Client {client_id}: {labels_flipped} labels flipped")
+                        self.malicious_clients.add(client_id)
+                    
+                    # Flatten parameters for clustering
+                    if isinstance(parameters, (list, tuple)) and len(parameters) >= 2:
+                        coef, intercept = parameters[0], parameters[1]
+                        if hasattr(coef, 'flatten'):
+                            flat_params = np.concatenate([coef.flatten(), intercept.flatten()])
+                        else:
+                            flat_params = np.concatenate([np.array(coef).flatten(), np.array(intercept).flatten()])
+                        client_updates.append(flat_params)
+        
+        # Perform K-means clustering if we have enough clients
+        if self.clustering_enabled and len(client_updates) >= 3:
+            try:
+                from sklearn.cluster import KMeans
+                from sklearn.preprocessing import StandardScaler
+                
+                # Normalize the updates
+                scaler = StandardScaler()
+                normalized_updates = scaler.fit_transform(client_updates)
+                
+                # Perform clustering (2 clusters: normal vs malicious)
+                kmeans = KMeans(n_clusters=2, random_state=42, n_init=10)
+                cluster_labels = kmeans.fit_predict(normalized_updates)
+                
+                # Identify the smaller cluster as potentially malicious
+                cluster_0_count = np.sum(cluster_labels == 0)
+                cluster_1_count = np.sum(cluster_labels == 1)
+                
+                malicious_cluster = 0 if cluster_0_count < cluster_1_count else 1
+                
+                # Mark clients in the malicious cluster
+                for i, (client_id, cluster_label) in enumerate(zip(client_ids, cluster_labels)):
+                    if cluster_label == malicious_cluster and client_id != "unknown":
+                        print(f"🔍 Clustering detected potential malicious client: {client_id}")
+                        self.malicious_clients.add(client_id)
+                
+            except Exception as e:
+                print(f"⚠️ Clustering defense failed: {e}")
+        
+        return self.malicious_clients
+    
+    def apply_defense_mechanism(self, results):
+        """Apply defense mechanism to filter out malicious clients"""
+        if not self.malicious_clients:
+            return results
+        
+        # Filter out results from detected malicious clients
+        filtered_results = []
+        excluded_count = 0
+        
+        for result in results:
+            if len(result) >= 2 and isinstance(result[1], dict):
+                client_id = result[1].get("client_id", "unknown")
+                if client_id not in self.malicious_clients:
+                    filtered_results.append(result)
+                else:
+                    excluded_count += 1
+                    print(f"🛡️ Excluded malicious client {client_id} from aggregation")
+            else:
+                # Include results without client identification
+                filtered_results.append(result)
+        
+        if excluded_count > 0:
+            print(f"🛡️ Defense mechanism: Excluded {excluded_count} malicious clients from aggregation")
+        
+        return filtered_results
     
     def aggregate_evaluate(
         self,
@@ -112,6 +211,24 @@ class LoanServerStrategy(FedAvg):
         
         print(f"Round {server_round} - Average Accuracy: {avg_accuracy:.4f}")
         return avg_accuracy
+    
+    def aggregate_fit(self, server_round, results, failures):
+        """Aggregate model weights with defense mechanism"""
+        print(f"\n🔄 Round {server_round}: Aggregating {len(results)} client updates...")
+        
+        # Detect malicious clients before aggregation
+        detected_malicious = self.detect_malicious_clients(results)
+        if detected_malicious:
+            print(f"🚨 Detected {len(detected_malicious)} malicious clients: {detected_malicious}")
+        
+        # Apply defense mechanism to filter malicious clients
+        filtered_results = self.apply_defense_mechanism(results)
+        
+        if len(filtered_results) != len(results):
+            print(f"🛡️ Defense applied: Using {len(filtered_results)}/{len(results)} clients for aggregation")
+        
+        # Call parent aggregation with filtered results
+        return super().aggregate_fit(server_round, filtered_results, failures)
     
     def save_metrics(self):
         """Save training metrics to file"""

@@ -478,6 +478,95 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# Demo API endpoints for malicious client simulation
+@app.route('/api/demo/clients')
+def get_demo_clients():
+    """Get all clients with their demo status"""
+    try:
+        clients = []
+        client_metrics = dashboard.get_client_metrics()
+        
+        for client_id in range(1, 11):  # Clients 1-10
+            try:
+                # Try to get status from client's demo server
+                response = requests.get(f"http://client{client_id}:808{client_id + 1}/status", timeout=2)
+                if response.status_code == 200:
+                    client_data = response.json()
+                    is_malicious = client_data.get('is_malicious', False)
+                else:
+                    is_malicious = False
+            except:
+                is_malicious = False
+            
+            # Get latest metrics for this client
+            latest_accuracy = 0.0
+            latest_loss = 1.0
+            if isinstance(client_metrics, dict) and str(client_id) in client_metrics:
+                client_info = client_metrics[str(client_id)]
+                latest_accuracy = client_info.get('accuracy', 0.0)
+                latest_loss = client_info.get('loss', 1.0)
+            
+            clients.append({
+                'client_id': client_id,
+                'is_malicious': is_malicious,
+                'status': 'Malicious' if is_malicious else 'Normal',
+                'accuracy': round(latest_accuracy, 4),
+                'loss': round(latest_loss, 4),
+                'demo_port': 8081 + client_id
+            })
+        
+        return jsonify({'clients': clients})
+    except Exception as e:
+        logger.error(f"Error getting demo clients: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/demo/toggle/<int:client_id>', methods=['POST'])
+def toggle_client_malicious(client_id):
+    """Toggle malicious status for a specific client"""
+    try:
+        demo_port = 8081 + client_id
+        response = requests.post(f"http://client{client_id}:{demo_port}/toggle_malicious", timeout=5)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify({
+                'success': True,
+                'client_id': client_id,
+                'is_malicious': result.get('is_malicious', False)
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to toggle client status'}), 500
+    except Exception as e:
+        logger.error(f"Error toggling client {client_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/demo/reset_all', methods=['POST'])
+def reset_all_clients():
+    """Reset all clients to normal (non-malicious) status"""
+    try:
+        results = []
+        for client_id in range(1, 11):
+            try:
+                demo_port = 8081 + client_id
+                response = requests.post(f"http://client{client_id}:{demo_port}/reset_malicious", timeout=3)
+                
+                if response.status_code == 200:
+                    results.append({'client_id': client_id, 'success': True})
+                else:
+                    results.append({'client_id': client_id, 'success': False, 'error': 'Request failed'})
+            except Exception as e:
+                results.append({'client_id': client_id, 'success': False, 'error': str(e)})
+        
+        success_count = sum(1 for r in results if r['success'])
+        return jsonify({
+            'success': True,
+            'message': f'Reset {success_count}/10 clients successfully',
+            'results': results
+        })
+    except Exception as e:
+        logger.error(f"Error resetting all clients: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/metrics')
 def metrics_endpoint():
     """Prometheus metrics endpoint for dashboard"""
@@ -499,10 +588,15 @@ def metrics_endpoint():
             
         try:
             training_metrics = dashboard.get_training_metrics()
-            if not isinstance(training_metrics, dict):
-                training_metrics = {}
+            # Handle both dict and list formats
+            if isinstance(training_metrics, list):
+                rounds_completed = len(training_metrics)
+            elif isinstance(training_metrics, dict):
+                rounds_completed = training_metrics.get('rounds_completed', 0)
+            else:
+                rounds_completed = 0
         except:
-            training_metrics = {}
+            rounds_completed = 0
         
         # Generate Prometheus format metrics
         metrics_text = f"""# HELP dashboard_clients_total Total number of clients
@@ -515,7 +609,7 @@ dashboard_clients_active {client_metrics.get('active_clients', 0)}
 
 # HELP dashboard_training_rounds_total Total training rounds completed
 # TYPE dashboard_training_rounds_total counter
-dashboard_training_rounds_total {training_metrics.get('rounds_completed', 0)}
+dashboard_training_rounds_total {rounds_completed}
 
 # HELP dashboard_system_cpu_percent CPU usage percentage
 # TYPE dashboard_system_cpu_percent gauge

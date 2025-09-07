@@ -71,6 +71,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8082:8082"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=1
@@ -93,6 +95,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8083:8083"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=2
@@ -115,6 +119,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8084:8084"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=3
@@ -137,6 +143,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8085:8085"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=4
@@ -159,6 +167,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8086:8086"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=5
@@ -181,6 +191,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8087:8087"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=6
@@ -203,6 +215,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8088:8088"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=7
@@ -225,6 +239,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8089:8089"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=8
@@ -247,6 +263,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8090:8090"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=9
@@ -269,6 +287,8 @@ services:
       - ca-certs:/app/certs:ro
       - client-logs:/app/logs
     working_dir: /app/client
+    ports:
+      - "8091:8091"  # Demo control port
     environment:
       - PYTHONPATH=/app
       - CLIENT_ID=10
