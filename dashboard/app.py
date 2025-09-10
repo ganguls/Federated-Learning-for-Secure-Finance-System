@@ -139,7 +139,14 @@ class FLDashboard:
             if metrics_file.exists():
                 with open(metrics_file, 'r') as f:
                     metrics = json.load(f)
-                return metrics
+                # Ensure metrics is a list format
+                if isinstance(metrics, list):
+                    return metrics
+                elif isinstance(metrics, dict) and 'rounds' in metrics:
+                    return metrics['rounds']
+                else:
+                    # Convert single dict to list format
+                    return [metrics] if metrics else []
             
             # If no real data, return sample data for demonstration
             return self.get_sample_training_data()
@@ -152,27 +159,32 @@ class FLDashboard:
         import random
         import time
         
-        # Generate sample data for 3 rounds with 10 clients
+        # Generate sample data for 5 rounds with 10 clients
         sample_data = []
-        for round_num in range(1, 4):
+        for round_num in range(1, 6):
             client_metrics = {}
             accuracies = []
             
-            for client_id in range(1, 11):  # Changed from 6 to 11 to include all 10 clients
+            for client_id in range(1, 11):  # 10 clients
                 # Generate realistic accuracy values (improving over rounds)
-                base_accuracy = 0.6 + (round_num - 1) * 0.1 + random.uniform(-0.05, 0.05)
+                base_accuracy = 0.6 + (round_num - 1) * 0.08 + random.uniform(-0.05, 0.05)
                 accuracy = max(0.5, min(0.95, base_accuracy))
                 
                 # Generate loss (decreasing over rounds)
-                loss = 0.8 - (round_num - 1) * 0.15 + random.uniform(-0.1, 0.1)
+                loss = 0.8 - (round_num - 1) * 0.12 + random.uniform(-0.1, 0.1)
                 loss = max(0.1, min(1.0, loss))
                 
+                # Ensure precision, recall, f1 are close to accuracy
+                precision = max(0.0, min(1.0, accuracy + random.uniform(-0.03, 0.03)))
+                recall = max(0.0, min(1.0, accuracy + random.uniform(-0.03, 0.03)))
+                f1_score = max(0.0, min(1.0, accuracy + random.uniform(-0.03, 0.03)))
+                
                 client_metrics[str(client_id)] = {
-                    "accuracy": accuracy,
-                    "precision": accuracy + random.uniform(-0.05, 0.05),
-                    "recall": accuracy + random.uniform(-0.05, 0.05),
-                    "f1_score": accuracy + random.uniform(-0.05, 0.05),
-                    "loss": loss,
+                    "accuracy": round(accuracy, 4),
+                    "precision": round(precision, 4),
+                    "recall": round(recall, 4),
+                    "f1_score": round(f1_score, 4),
+                    "loss": round(loss, 4),
                     "num_examples": random.randint(20000, 25000)
                 }
                 accuracies.append(accuracy)
@@ -181,7 +193,7 @@ class FLDashboard:
             
             sample_data.append({
                 "round": round_num,
-                "avg_accuracy": avg_accuracy,
+                "avg_accuracy": round(avg_accuracy, 4),
                 "client_metrics": client_metrics
             })
         
@@ -238,14 +250,15 @@ class FLDashboard:
 
     def get_client_metrics(self):
         """Get metrics for all clients"""
+        client_metrics = {}
+        
         if self.docker_client:
             # Use Docker container detection
             containers = self.get_docker_containers()
-            client_metrics = {}
             
             for container_name, container_info in containers.items():
                 if container_info['type'] == 'client' and container_info['client_id']:
-                    client_id = container_info['client_id']
+                    client_id = str(container_info['client_id'])
                     client_metrics[client_id] = {
                         'status': 'running' if container_info['status'] == 'running' else 'stopped',
                         'container_name': container_name,
@@ -253,11 +266,8 @@ class FLDashboard:
                         'uptime': 'N/A',  # Could calculate from created time
                         'metrics': {}
                     }
-            
-            return client_metrics
         else:
             # Fallback to subprocess detection
-            client_metrics = {}
             for client_id, client_info in self.clients.items():
                 if client_info['status'] == 'running':
                     # Check if client process is still running
@@ -265,13 +275,22 @@ class FLDashboard:
                         client_info['status'] = 'stopped'
                     
                     # Get client-specific metrics
-                    client_metrics[client_id] = {
+                    client_metrics[str(client_id)] = {
                         'status': client_info['status'],
                         'uptime': str(datetime.now() - client_info['start_time']).split('.')[0],
                         'metrics': client_info.get('metrics', {})
                     }
-            
-            return client_metrics
+        
+        # If no clients found, create sample data for demonstration
+        if not client_metrics:
+            for client_id in range(1, 11):
+                client_metrics[str(client_id)] = {
+                    'status': 'stopped',
+                    'uptime': 'N/A',
+                    'metrics': {}
+                }
+        
+        return client_metrics
 
 # Initialize dashboard
 dashboard = FLDashboard()

@@ -233,9 +233,35 @@ class LoanServerStrategy(FedAvg):
     def save_metrics(self):
         """Save training metrics to file"""
         metrics_file = "training_metrics.json"
-        with open(metrics_file, "w") as f:
-            json.dump(self.round_metrics, f, indent=2)
-        print(f"Metrics saved to {metrics_file}")
+        try:
+            # Ensure all data is JSON serializable
+            serializable_metrics = []
+            for metric in self.round_metrics:
+                if isinstance(metric, dict):
+                    # Create a clean copy with only serializable values
+                    clean_metric = {}
+                    for key, value in metric.items():
+                        if isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                            clean_metric[key] = value
+                        else:
+                            clean_metric[key] = str(value)  # Convert non-serializable to string
+                    serializable_metrics.append(clean_metric)
+                else:
+                    serializable_metrics.append(str(metric))
+            
+            with open(metrics_file, "w") as f:
+                json.dump(serializable_metrics, f, indent=2)
+            print(f"Metrics saved to {metrics_file}")
+        except Exception as e:
+            print(f"Warning: Could not save metrics: {e}")
+            # Save a minimal version
+            try:
+                minimal_metrics = [{"round": i+1, "avg_accuracy": 0.0} for i in range(len(self.round_metrics))]
+                with open(metrics_file, "w") as f:
+                    json.dump(minimal_metrics, f, indent=2)
+                print(f"Minimal metrics saved to {metrics_file}")
+            except:
+                print("Could not save any metrics")
 
 def main():
     """Start the Flower federated learning server"""
