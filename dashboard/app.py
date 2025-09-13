@@ -497,33 +497,41 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# Demo API endpoints for malicious client simulation
+# Demo API endpoints - now integrated with security system
 @app.route('/api/demo/clients')
 def get_demo_clients():
-    """Get all clients with their demo status"""
+    """Get all clients with their demo status (now uses security system)"""
     try:
-        clients = []
+        # Get security status to determine which clients are malicious
+        security_response = requests.get(f"{os.environ.get('SERVER_URL', 'http://server:8080')}/security/status", timeout=5)
+        if security_response.status_code == 200:
+            security_data = security_response.json()
+            active_attacks = security_data.get('simulator_status', {}).get('active_attacks', {})
+        else:
+            active_attacks = {}
+        
+        # Get client metrics
         client_metrics = dashboard.get_client_metrics()
         
+        clients = []
         for client_id in range(1, 11):  # Clients 1-10
-            try:
-                # Try to get status from client's demo server
-                response = requests.get(f"http://client{client_id}:808{client_id + 1}/status", timeout=2)
-                if response.status_code == 200:
-                    client_data = response.json()
-                    is_malicious = client_data.get('is_malicious', False)
-                else:
-                    is_malicious = False
-            except:
-                is_malicious = False
+            client_id_str = str(client_id)
+            is_malicious = client_id_str in active_attacks
+            attack_type = active_attacks.get(client_id_str, 'None')
             
             # Get latest metrics for this client
-            latest_accuracy = 0.0
-            latest_loss = 1.0
-            if isinstance(client_metrics, dict) and str(client_id) in client_metrics:
-                client_info = client_metrics[str(client_id)]
-                latest_accuracy = client_info.get('accuracy', 0.0)
-                latest_loss = client_info.get('loss', 1.0)
+            latest_accuracy = 0.8  # Default normal accuracy
+            latest_loss = 0.3      # Default normal loss
+            
+            if isinstance(client_metrics, dict) and client_id_str in client_metrics:
+                client_info = client_metrics[client_id_str]
+                latest_accuracy = client_info.get('metrics', {}).get('accuracy', latest_accuracy)
+                latest_loss = client_info.get('metrics', {}).get('loss', latest_loss)
+            
+            # Adjust metrics for malicious clients
+            if is_malicious:
+                latest_accuracy = max(0.1, latest_accuracy - 0.5)  # Degrade accuracy
+                latest_loss = min(2.0, latest_loss + 0.7)          # Increase loss
             
             clients.append({
                 'client_id': client_id,
@@ -531,6 +539,7 @@ def get_demo_clients():
                 'status': 'Malicious' if is_malicious else 'Normal',
                 'accuracy': round(latest_accuracy, 4),
                 'loss': round(latest_loss, 4),
+                'attack_type': attack_type,
                 'demo_port': 8081 + client_id
             })
         
@@ -541,17 +550,32 @@ def get_demo_clients():
 
 @app.route('/api/demo/toggle/<int:client_id>', methods=['POST'])
 def toggle_client_malicious(client_id):
-    """Toggle malicious status for a specific client"""
+    """Toggle malicious status for a specific client (now uses security system)"""
     try:
-        demo_port = 8081 + client_id
-        response = requests.post(f"http://client{client_id}:{demo_port}/toggle_malicious", timeout=5)
+        # Check if client is currently malicious
+        security_response = requests.get(f"{os.environ.get('SERVER_URL', 'http://server:8080')}/security/status", timeout=5)
+        if security_response.status_code == 200:
+            security_data = security_response.json()
+            active_attacks = security_data.get('simulator_status', {}).get('active_attacks', {})
+            is_malicious = str(client_id) in active_attacks
+        else:
+            is_malicious = False
+        
+        if is_malicious:
+            # Remove attack
+            response = requests.post(f"{os.environ.get('SERVER_URL', 'http://server:8080')}/security/attack/remove", 
+                                   json={'client_id': str(client_id)}, timeout=5)
+        else:
+            # Simulate attack
+            response = requests.post(f"{os.environ.get('SERVER_URL', 'http://server:8080')}/security/attack/simulate", 
+                                   json={'client_id': str(client_id), 'attack_type': 'random'}, timeout=5)
         
         if response.status_code == 200:
             result = response.json()
             return jsonify({
                 'success': True,
                 'client_id': client_id,
-                'is_malicious': result.get('is_malicious', False)
+                'is_malicious': not is_malicious  # Toggle the status
             })
         else:
             return jsonify({'success': False, 'error': 'Failed to toggle client status'}), 500
@@ -561,30 +585,169 @@ def toggle_client_malicious(client_id):
 
 @app.route('/api/demo/reset_all', methods=['POST'])
 def reset_all_clients():
-    """Reset all clients to normal (non-malicious) status"""
+    """Reset all clients to normal (non-malicious) status (now uses security system)"""
     try:
-        results = []
-        for client_id in range(1, 11):
-            try:
-                demo_port = 8081 + client_id
-                response = requests.post(f"http://client{client_id}:{demo_port}/reset_malicious", timeout=3)
-                
-                if response.status_code == 200:
-                    results.append({'client_id': client_id, 'success': True})
-                else:
-                    results.append({'client_id': client_id, 'success': False, 'error': 'Request failed'})
-            except Exception as e:
-                results.append({'client_id': client_id, 'success': False, 'error': str(e)})
+        # Clear all attacks
+        response = requests.post(f"{os.environ.get('SERVER_URL', 'http://server:8080')}/security/attack/clear", timeout=5)
         
-        success_count = sum(1 for r in results if r['success'])
-        return jsonify({
-            'success': True,
-            'message': f'Reset {success_count}/10 clients successfully',
-            'results': results
-        })
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify({
+                'success': True,
+                'message': 'All clients reset to normal status',
+                'results': [{'client_id': i, 'success': True} for i in range(1, 11)]
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to reset clients'}), 500
     except Exception as e:
         logger.error(f"Error resetting all clients: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Attack Detection API Endpoints
+@app.route('/api/security/status')
+def get_security_status():
+    """Get current security status and attack detection info"""
+    try:
+        # Try to get security info from server
+        server_url = os.environ.get('SERVER_URL', 'http://server:8080')
+        response = requests.get(f"{server_url}/security/status", timeout=5)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            # Fallback to basic info
+            return jsonify({
+                'security_status': 'UNKNOWN',
+                'attack_detection_enabled': False,
+                'malicious_clients': [],
+                'message': 'Server security endpoint not available'
+            })
+    except Exception as e:
+        logger.error(f"Error getting security status: {e}")
+        return jsonify({
+            'security_status': 'ERROR',
+            'attack_detection_enabled': False,
+            'malicious_clients': [],
+            'error': str(e)
+        }), 500
+
+@app.route('/api/security/attack/simulate', methods=['POST'])
+def simulate_attack():
+    """Simulate a data poisoning attack for a specific client"""
+    try:
+        data = request.get_json()
+        client_id = data.get('client_id')
+        attack_type = data.get('attack_type', 'random')
+        
+        if not client_id:
+            return jsonify({'success': False, 'error': 'Client ID required'}), 400
+        
+        # Try to simulate attack via server
+        server_url = os.environ.get('SERVER_URL', 'http://server:8080')
+        response = requests.post(f"{server_url}/security/attack/simulate", 
+                               json={'client_id': client_id, 'attack_type': attack_type}, 
+                               timeout=5)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'error': 'Server attack simulation failed'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error simulating attack: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/security/attack/remove', methods=['POST'])
+def remove_attack():
+    """Remove attack simulation from a specific client"""
+    try:
+        data = request.get_json()
+        client_id = data.get('client_id')
+        
+        if not client_id:
+            return jsonify({'success': False, 'error': 'Client ID required'}), 400
+        
+        # Try to remove attack via server
+        server_url = os.environ.get('SERVER_URL', 'http://server:8080')
+        response = requests.post(f"{server_url}/security/attack/remove", 
+                               json={'client_id': client_id}, 
+                               timeout=5)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'error': 'Server attack removal failed'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error removing attack: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/security/attack/clear', methods=['POST'])
+def clear_all_attacks():
+    """Clear all attack simulations"""
+    try:
+        # Try to clear attacks via server
+        server_url = os.environ.get('SERVER_URL', 'http://server:8080')
+        response = requests.post(f"{server_url}/security/attack/clear", timeout=5)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'error': 'Server attack clearing failed'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error clearing attacks: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/security/statistics')
+def get_security_statistics():
+    """Get comprehensive security statistics"""
+    try:
+        # Try to get statistics from server
+        server_url = os.environ.get('SERVER_URL', 'http://server:8080')
+        response = requests.get(f"{server_url}/security/statistics", timeout=5)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            # Fallback to basic statistics
+            return jsonify({
+                'attack_detection_enabled': False,
+                'total_rounds': 0,
+                'attacks_detected': 0,
+                'clients_blocked': 0,
+                'malicious_clients': [],
+                'message': 'Server statistics not available'
+            })
+    except Exception as e:
+        logger.error(f"Error getting security statistics: {e}")
+        return jsonify({
+            'attack_detection_enabled': False,
+            'total_rounds': 0,
+            'attacks_detected': 0,
+            'clients_blocked': 0,
+            'malicious_clients': [],
+            'error': str(e)
+        }), 500
+
+@app.route('/api/security/report')
+def get_security_report():
+    """Get comprehensive security report"""
+    try:
+        # Try to get report from server
+        server_url = os.environ.get('SERVER_URL', 'http://server:8080')
+        response = requests.get(f"{server_url}/security/report", timeout=5)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'error': 'Server security report not available'}), 500
+    except Exception as e:
+        logger.error(f"Error getting security report: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/metrics')
 def metrics_endpoint():

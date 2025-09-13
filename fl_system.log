@@ -1,0 +1,608 @@
+2025-09-13 09:07:37,005 - run_fl_system_local - INFO - Starting CA service...
+2025-09-13 09:07:39,134 - run_fl_system_local - INFO - ca is ready!
+2025-09-13 09:07:39,134 - run_fl_system_local - INFO - CA service started successfully!
+2025-09-13 09:07:41,135 - run_fl_system_local - INFO - Stopping FL system...
+2025-09-13 09:07:41,141 - run_fl_system_local - INFO - ca stopped
+2025-09-13 09:07:41,141 - run_fl_system_local - INFO - FL system stopped
+2025-09-13 09:12:32,396 - __main__ - INFO - ============================================================
+2025-09-13 09:12:32,397 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:12:32,397 - __main__ - INFO - ============================================================
+2025-09-13 09:12:32,398 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:12:36,044 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:12:36,044 - __main__ - INFO - Checking port availability...
+2025-09-13 09:13:02,594 - __main__ - INFO - All ports are available!
+2025-09-13 09:13:02,595 - __main__ - INFO - Preparing data...
+2025-09-13 09:13:02,596 - __main__ - INFO - Data is ready!
+2025-09-13 09:13:02,597 - __main__ - INFO - Starting CA Service...
+2025-09-13 09:13:02,597 - __main__ - INFO - Starting CA service...
+2025-09-13 09:13:04,660 - __main__ - INFO - ca is ready!
+2025-09-13 09:13:04,660 - __main__ - INFO - CA service started successfully!
+2025-09-13 09:13:04,661 - __main__ - INFO - Starting FL Server...
+2025-09-13 09:13:04,661 - __main__ - INFO - Starting FL server...
+2025-09-13 09:13:09,715 - __main__ - INFO - FL server started successfully!
+2025-09-13 09:13:09,715 - __main__ - INFO - Starting FL Clients...
+2025-09-13 09:13:09,715 - __main__ - INFO - Starting FL clients...
+2025-09-13 09:13:09,820 - __main__ - INFO - Started client 1
+2025-09-13 09:13:11,880 - __main__ - INFO - Started client 2
+2025-09-13 09:13:13,942 - __main__ - INFO - Started client 3
+2025-09-13 09:13:16,018 - __main__ - INFO - Started client 4
+2025-09-13 09:13:18,077 - __main__ - INFO - Started client 5
+2025-09-13 09:13:20,139 - __main__ - INFO - Started client 6
+2025-09-13 09:13:22,204 - __main__ - INFO - Started client 7
+2025-09-13 09:13:24,276 - __main__ - INFO - Started client 8
+2025-09-13 09:13:26,347 - __main__ - INFO - Started client 9
+2025-09-13 09:13:28,408 - __main__ - INFO - Started client 10
+2025-09-13 09:13:30,410 - __main__ - INFO - Started 10 clients successfully!
+2025-09-13 09:13:30,410 - __main__ - INFO - Starting Dashboard...
+2025-09-13 09:13:30,411 - __main__ - INFO - Starting dashboard...
+2025-09-13 09:14:00,916 - __main__ - ERROR - dashboard did not become available within 30 seconds
+2025-09-13 09:14:00,916 - __main__ - ERROR - Dashboard failed to start
+2025-09-13 09:14:00,916 - __main__ - ERROR - Failed to start Dashboard
+2025-09-13 09:14:00,916 - __main__ - INFO - Stopping FL system...
+2025-09-13 09:14:00,918 - __main__ - INFO - ca stopped
+2025-09-13 09:14:00,918 - __main__ - INFO - server stopped
+2025-09-13 09:14:00,918 - __main__ - INFO - Client 1 stopped
+2025-09-13 09:14:00,919 - __main__ - INFO - Client 2 stopped
+2025-09-13 09:14:00,919 - __main__ - INFO - Client 3 stopped
+2025-09-13 09:14:00,919 - __main__ - INFO - Client 4 stopped
+2025-09-13 09:14:00,919 - __main__ - INFO - Client 5 stopped
+2025-09-13 09:14:00,920 - __main__ - INFO - Client 6 stopped
+2025-09-13 09:14:00,920 - __main__ - INFO - Client 7 stopped
+2025-09-13 09:14:00,920 - __main__ - INFO - Client 8 stopped
+2025-09-13 09:14:00,920 - __main__ - INFO - Client 9 stopped
+2025-09-13 09:14:00,920 - __main__ - INFO - Client 10 stopped
+2025-09-13 09:14:00,921 - __main__ - INFO - dashboard stopped
+2025-09-13 09:14:00,921 - __main__ - INFO - FL system stopped
+2025-09-13 09:14:00,921 - __main__ - ERROR - Failed to start FL system
+2025-09-13 09:14:00,921 - __main__ - INFO - Stopping FL system...
+2025-09-13 09:14:00,921 - __main__ - INFO - ca stopped
+2025-09-13 09:14:00,921 - __main__ - INFO - server stopped
+2025-09-13 09:14:00,921 - __main__ - INFO - Client 1 stopped
+2025-09-13 09:14:00,922 - __main__ - INFO - Client 2 stopped
+2025-09-13 09:14:00,922 - __main__ - INFO - Client 3 stopped
+2025-09-13 09:14:00,922 - __main__ - INFO - Client 4 stopped
+2025-09-13 09:14:00,922 - __main__ - INFO - Client 5 stopped
+2025-09-13 09:14:00,922 - __main__ - INFO - Client 6 stopped
+2025-09-13 09:14:00,922 - __main__ - INFO - Client 7 stopped
+2025-09-13 09:14:00,923 - __main__ - INFO - Client 8 stopped
+2025-09-13 09:14:00,923 - __main__ - INFO - Client 9 stopped
+2025-09-13 09:14:00,923 - __main__ - INFO - Client 10 stopped
+2025-09-13 09:14:00,923 - __main__ - INFO - dashboard stopped
+2025-09-13 09:14:00,923 - __main__ - INFO - FL system stopped
+2025-09-13 09:30:12,357 - __main__ - INFO - ============================================================
+2025-09-13 09:30:12,358 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:30:12,358 - __main__ - INFO - ============================================================
+2025-09-13 09:30:12,358 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:30:21,691 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-09-13 09:30:21,692 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-13 09:30:26,680 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:30:26,680 - __main__ - INFO - Checking port availability...
+2025-09-13 09:30:30,779 - __main__ - ERROR - Port 5000 is not available for dashboard
+2025-09-13 09:30:30,779 - __main__ - ERROR - Failed to start FL system
+2025-09-13 09:30:30,779 - __main__ - INFO - Stopping FL system...
+2025-09-13 09:30:30,780 - __main__ - INFO - FL system stopped
+2025-09-13 09:30:36,243 - __main__ - INFO - ============================================================
+2025-09-13 09:30:36,243 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:30:36,243 - __main__ - INFO - ============================================================
+2025-09-13 09:30:36,243 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:30:39,514 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-09-13 09:30:39,514 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-13 09:30:42,042 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:30:42,042 - __main__ - INFO - Checking port availability...
+2025-09-13 09:31:08,619 - __main__ - INFO - All ports are available!
+2025-09-13 09:31:08,619 - __main__ - INFO - Preparing data...
+2025-09-13 09:31:08,620 - __main__ - INFO - Data is ready!
+2025-09-13 09:31:08,620 - __main__ - INFO - Starting CA Service...
+2025-09-13 09:31:08,620 - __main__ - INFO - Starting CA service...
+2025-09-13 09:31:10,714 - __main__ - INFO - ca is ready!
+2025-09-13 09:31:10,715 - __main__ - INFO - CA service started successfully!
+2025-09-13 09:31:10,715 - __main__ - INFO - Starting FL Server...
+2025-09-13 09:31:10,715 - __main__ - INFO - Starting FL server...
+2025-09-13 09:31:15,724 - __main__ - INFO - FL server started successfully!
+2025-09-13 09:31:15,724 - __main__ - INFO - Starting FL Clients...
+2025-09-13 09:31:15,724 - __main__ - INFO - Starting FL clients...
+2025-09-13 09:31:15,734 - __main__ - INFO - Started client 1
+2025-09-13 09:31:17,744 - __main__ - INFO - Started client 2
+2025-09-13 09:31:19,756 - __main__ - INFO - Started client 3
+2025-09-13 09:31:21,766 - __main__ - INFO - Started client 4
+2025-09-13 09:31:23,777 - __main__ - INFO - Started client 5
+2025-09-13 09:31:25,792 - __main__ - INFO - Started client 6
+2025-09-13 09:31:27,805 - __main__ - INFO - Started client 7
+2025-09-13 09:31:29,820 - __main__ - INFO - Started client 8
+2025-09-13 09:31:31,837 - __main__ - INFO - Started client 9
+2025-09-13 09:31:33,866 - __main__ - INFO - Started client 10
+2025-09-13 09:31:35,867 - __main__ - INFO - Started 10 clients successfully!
+2025-09-13 09:31:35,868 - __main__ - INFO - Starting Dashboard...
+2025-09-13 09:31:35,869 - __main__ - INFO - Starting dashboard...
+2025-09-13 09:31:39,459 - __main__ - INFO - dashboard is ready!
+2025-09-13 09:31:39,460 - __main__ - INFO - Dashboard started successfully!
+2025-09-13 09:31:39,461 - __main__ - INFO - Generating certificates for clients...
+2025-09-13 09:31:41,598 - __main__ - WARNING - Failed to generate certificate for client 1
+2025-09-13 09:31:43,800 - __main__ - WARNING - Failed to generate certificate for client 2
+2025-09-13 09:31:45,953 - __main__ - WARNING - Failed to generate certificate for client 3
+2025-09-13 09:31:48,094 - __main__ - WARNING - Failed to generate certificate for client 4
+2025-09-13 09:31:50,227 - __main__ - WARNING - Failed to generate certificate for client 5
+2025-09-13 09:32:02,289 - __main__ - WARNING - Error generating certificate for client 6: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:32:14,352 - __main__ - WARNING - Error generating certificate for client 7: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:32:57,658 - __main__ - INFO - ============================================================
+2025-09-13 09:32:57,659 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:32:57,659 - __main__ - INFO - ============================================================
+2025-09-13 09:32:57,659 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:33:00,578 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:33:00,578 - __main__ - INFO - Checking port availability...
+2025-09-13 09:33:06,720 - __main__ - ERROR - Port 8082 is not available
+2025-09-13 09:33:06,721 - __main__ - ERROR - Failed to start FL system
+2025-09-13 09:33:06,721 - __main__ - INFO - Stopping FL system...
+2025-09-13 09:33:06,721 - __main__ - INFO - FL system stopped
+2025-09-13 09:33:17,119 - __main__ - INFO - ============================================================
+2025-09-13 09:33:17,119 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:33:17,119 - __main__ - INFO - ============================================================
+2025-09-13 09:33:17,119 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:33:19,006 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:33:19,007 - __main__ - INFO - Checking port availability...
+2025-09-13 09:33:25,170 - __main__ - ERROR - Port 8082 is not available
+2025-09-13 09:33:25,170 - __main__ - ERROR - Failed to start FL system
+2025-09-13 09:33:25,171 - __main__ - INFO - Stopping FL system...
+2025-09-13 09:33:25,171 - __main__ - INFO - FL system stopped
+2025-09-13 09:35:00,579 - __main__ - INFO - ============================================================
+2025-09-13 09:35:00,579 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:35:00,579 - __main__ - INFO - ============================================================
+2025-09-13 09:35:00,579 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:35:05,667 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-09-13 09:35:05,668 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-13 09:35:09,384 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:35:09,385 - __main__ - INFO - Checking port availability...
+2025-09-13 09:35:35,933 - __main__ - INFO - All ports are available!
+2025-09-13 09:35:35,933 - __main__ - INFO - Preparing data...
+2025-09-13 09:35:35,934 - __main__ - INFO - Data is ready!
+2025-09-13 09:35:35,934 - __main__ - INFO - Starting CA Service...
+2025-09-13 09:35:35,934 - __main__ - INFO - Starting CA service...
+2025-09-13 09:35:38,016 - __main__ - INFO - ca is ready!
+2025-09-13 09:35:38,016 - __main__ - INFO - CA service started successfully!
+2025-09-13 09:35:38,017 - __main__ - INFO - Starting FL Server...
+2025-09-13 09:35:38,017 - __main__ - INFO - Starting FL server...
+2025-09-13 09:35:43,025 - __main__ - INFO - FL server started successfully!
+2025-09-13 09:35:43,025 - __main__ - INFO - Starting FL Clients...
+2025-09-13 09:35:43,026 - __main__ - INFO - Starting FL clients...
+2025-09-13 09:35:43,035 - __main__ - INFO - Started client 1
+2025-09-13 09:35:45,045 - __main__ - INFO - Started client 2
+2025-09-13 09:35:47,056 - __main__ - INFO - Started client 3
+2025-09-13 09:35:49,070 - __main__ - INFO - Started client 4
+2025-09-13 09:35:51,083 - __main__ - INFO - Started client 5
+2025-09-13 09:35:53,098 - __main__ - INFO - Started client 6
+2025-09-13 09:35:55,110 - __main__ - INFO - Started client 7
+2025-09-13 09:35:57,122 - __main__ - INFO - Started client 8
+2025-09-13 09:35:59,140 - __main__ - INFO - Started client 9
+2025-09-13 09:36:01,165 - __main__ - INFO - Started client 10
+2025-09-13 09:36:03,167 - __main__ - INFO - Started 10 clients successfully!
+2025-09-13 09:36:03,167 - __main__ - INFO - Starting Dashboard...
+2025-09-13 09:36:03,167 - __main__ - INFO - Starting dashboard...
+2025-09-13 09:36:11,360 - __main__ - INFO - dashboard is ready!
+2025-09-13 09:36:11,362 - __main__ - INFO - Dashboard started successfully!
+2025-09-13 09:36:11,362 - __main__ - INFO - Generating certificates for clients...
+2025-09-13 09:36:13,676 - __main__ - WARNING - Failed to generate certificate for client 1
+2025-09-13 09:36:15,827 - __main__ - WARNING - Failed to generate certificate for client 2
+2025-09-13 09:36:17,988 - __main__ - WARNING - Failed to generate certificate for client 3
+2025-09-13 09:36:20,128 - __main__ - WARNING - Failed to generate certificate for client 4
+2025-09-13 09:36:22,310 - __main__ - WARNING - Failed to generate certificate for client 5
+2025-09-13 09:36:34,379 - __main__ - WARNING - Error generating certificate for client 6: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:36:46,451 - __main__ - WARNING - Error generating certificate for client 7: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:36:58,532 - __main__ - WARNING - Error generating certificate for client 8: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:37:10,613 - __main__ - WARNING - Error generating certificate for client 9: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:38:01,078 - __main__ - INFO - ============================================================
+2025-09-13 09:38:01,079 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:38:01,079 - __main__ - INFO - ============================================================
+2025-09-13 09:38:01,079 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:38:06,394 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-09-13 09:38:06,394 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-13 09:38:10,005 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:38:10,005 - __main__ - INFO - Checking port availability...
+2025-09-13 09:38:36,570 - __main__ - INFO - All ports are available!
+2025-09-13 09:38:36,570 - __main__ - INFO - Preparing data...
+2025-09-13 09:38:36,571 - __main__ - INFO - Data is ready!
+2025-09-13 09:38:36,571 - __main__ - INFO - Starting CA Service...
+2025-09-13 09:38:36,572 - __main__ - INFO - Starting CA service...
+2025-09-13 09:38:38,658 - __main__ - INFO - ca is ready!
+2025-09-13 09:38:38,658 - __main__ - INFO - CA service started successfully!
+2025-09-13 09:38:38,659 - __main__ - INFO - Starting FL Server...
+2025-09-13 09:38:38,659 - __main__ - INFO - Starting FL server...
+2025-09-13 09:38:43,667 - __main__ - INFO - FL server started successfully!
+2025-09-13 09:38:43,668 - __main__ - INFO - Starting FL Clients...
+2025-09-13 09:38:43,668 - __main__ - INFO - Starting FL clients...
+2025-09-13 09:38:43,675 - __main__ - INFO - Started client 1
+2025-09-13 09:38:45,683 - __main__ - INFO - Started client 2
+2025-09-13 09:38:47,692 - __main__ - INFO - Started client 3
+2025-09-13 09:38:49,700 - __main__ - INFO - Started client 4
+2025-09-13 09:38:51,709 - __main__ - INFO - Started client 5
+2025-09-13 09:38:53,731 - __main__ - INFO - Started client 6
+2025-09-13 09:38:55,788 - __main__ - INFO - Started client 7
+2025-09-13 09:38:57,805 - __main__ - INFO - Started client 8
+2025-09-13 09:38:59,862 - __main__ - INFO - Started client 9
+2025-09-13 09:39:01,880 - __main__ - INFO - Started client 10
+2025-09-13 09:39:03,881 - __main__ - INFO - Started 10 clients successfully!
+2025-09-13 09:39:03,881 - __main__ - INFO - Starting Dashboard...
+2025-09-13 09:39:03,882 - __main__ - INFO - Starting dashboard...
+2025-09-13 09:39:12,067 - __main__ - INFO - dashboard is ready!
+2025-09-13 09:39:12,067 - __main__ - INFO - Dashboard started successfully!
+2025-09-13 09:39:12,068 - __main__ - INFO - Generating certificates for clients...
+2025-09-13 09:39:14,978 - __main__ - WARNING - Failed to generate certificate for client 1
+2025-09-13 09:39:17,104 - __main__ - WARNING - Failed to generate certificate for client 2
+2025-09-13 09:39:19,308 - __main__ - WARNING - Failed to generate certificate for client 3
+2025-09-13 09:39:21,436 - __main__ - WARNING - Failed to generate certificate for client 4
+2025-09-13 09:39:23,531 - __main__ - WARNING - Failed to generate certificate for client 5
+2025-09-13 09:39:35,600 - __main__ - WARNING - Error generating certificate for client 6: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:40:01,224 - __main__ - INFO - ============================================================
+2025-09-13 09:40:01,224 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:40:01,224 - __main__ - INFO - ============================================================
+2025-09-13 09:40:01,226 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:40:10,975 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-09-13 09:40:10,975 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-13 09:40:15,882 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:40:15,883 - __main__ - INFO - Checking port availability...
+2025-09-13 09:40:42,417 - __main__ - INFO - All ports are available!
+2025-09-13 09:40:42,417 - __main__ - INFO - Preparing data...
+2025-09-13 09:40:42,419 - __main__ - INFO - Data is ready!
+2025-09-13 09:40:42,419 - __main__ - INFO - Starting CA Service...
+2025-09-13 09:40:42,420 - __main__ - INFO - Starting CA service...
+2025-09-13 09:40:44,487 - __main__ - INFO - ca is ready!
+2025-09-13 09:40:44,488 - __main__ - INFO - CA service started successfully!
+2025-09-13 09:40:44,488 - __main__ - INFO - Starting FL Server...
+2025-09-13 09:40:44,489 - __main__ - INFO - Starting FL server...
+2025-09-13 09:40:49,591 - __main__ - INFO - FL server started successfully!
+2025-09-13 09:40:49,591 - __main__ - INFO - Starting FL Clients...
+2025-09-13 09:40:49,591 - __main__ - INFO - Starting FL clients...
+2025-09-13 09:40:49,600 - __main__ - INFO - Started client 1
+2025-09-13 09:40:51,662 - __main__ - INFO - Started client 2
+2025-09-13 09:40:53,673 - __main__ - INFO - Started client 3
+2025-09-13 09:40:55,683 - __main__ - INFO - Started client 4
+2025-09-13 09:40:57,693 - __main__ - INFO - Started client 5
+2025-09-13 09:40:59,710 - __main__ - INFO - Started client 6
+2025-09-13 09:41:01,732 - __main__ - INFO - Started client 7
+2025-09-13 09:41:04,576 - __main__ - INFO - Started client 8
+2025-09-13 09:41:06,594 - __main__ - INFO - Started client 9
+2025-09-13 09:41:08,612 - __main__ - INFO - Started client 10
+2025-09-13 09:41:10,613 - __main__ - INFO - Started 10 clients successfully!
+2025-09-13 09:41:10,614 - __main__ - INFO - Starting Dashboard...
+2025-09-13 09:41:10,614 - __main__ - INFO - Starting dashboard...
+2025-09-13 09:41:14,711 - __main__ - INFO - dashboard is ready!
+2025-09-13 09:41:14,712 - __main__ - INFO - Dashboard started successfully!
+2025-09-13 09:41:14,713 - __main__ - INFO - Generating certificates for clients...
+2025-09-13 09:41:16,824 - __main__ - WARNING - Failed to generate certificate for client 1
+2025-09-13 09:41:18,980 - __main__ - WARNING - Failed to generate certificate for client 2
+2025-09-13 09:41:21,189 - __main__ - WARNING - Failed to generate certificate for client 3
+2025-09-13 09:41:23,308 - __main__ - WARNING - Failed to generate certificate for client 4
+2025-09-13 09:41:25,454 - __main__ - WARNING - Failed to generate certificate for client 5
+2025-09-13 09:41:37,527 - __main__ - WARNING - Error generating certificate for client 6: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:41:49,594 - __main__ - WARNING - Error generating certificate for client 7: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:42:01,692 - __main__ - WARNING - Error generating certificate for client 8: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:42:13,740 - __main__ - WARNING - Error generating certificate for client 9: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:42:25,805 - __main__ - WARNING - Error generating certificate for client 10: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:42:25,806 - __main__ - INFO - Starting system monitoring...
+2025-09-13 09:42:25,806 - __main__ - INFO - ============================================================
+2025-09-13 09:42:25,806 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:42:25,806 - __main__ - INFO - FL System started successfully!
+2025-09-13 09:42:25,807 - __main__ - WARNING - Client 4 stopped unexpectedly
+2025-09-13 09:42:25,807 - __main__ - INFO - Dashboard: http://localhost:5000
+2025-09-13 09:42:25,807 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:42:25,807 - __main__ - INFO - Server: http://localhost:8080
+2025-09-13 09:42:25,808 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:42:25,808 - __main__ - INFO - CA Service: http://localhost:9000
+2025-09-13 09:42:25,808 - __main__ - INFO - ============================================================
+2025-09-13 09:42:25,808 - __main__ - INFO - Opening dashboard: http://localhost:5000
+2025-09-13 09:42:26,011 - __main__ - INFO - System is running. Press Ctrl+C to stop.
+2025-09-13 09:42:35,809 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:42:35,809 - __main__ - WARNING - Client 4 stopped unexpectedly
+2025-09-13 09:42:35,809 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:42:35,809 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:42:45,810 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:42:45,810 - __main__ - WARNING - Client 4 stopped unexpectedly
+2025-09-13 09:42:45,810 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:42:45,811 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:42:55,812 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:42:55,813 - __main__ - WARNING - Client 4 stopped unexpectedly
+2025-09-13 09:42:55,813 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:42:55,813 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:43:05,814 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:43:05,814 - __main__ - WARNING - Client 4 stopped unexpectedly
+2025-09-13 09:43:05,814 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:43:05,814 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:45:55,780 - __main__ - INFO - ============================================================
+2025-09-13 09:45:55,781 - __main__ - INFO - Starting Federated Learning System (Local Mode)
+2025-09-13 09:45:55,781 - __main__ - INFO - ============================================================
+2025-09-13 09:45:55,781 - __main__ - INFO - Checking dependencies...
+2025-09-13 09:46:00,740 - numexpr.utils - INFO - Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+2025-09-13 09:46:00,740 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-13 09:46:04,122 - __main__ - INFO - All dependencies are available!
+2025-09-13 09:46:04,123 - __main__ - INFO - Checking port availability...
+2025-09-13 09:46:30,706 - __main__ - INFO - All ports are available!
+2025-09-13 09:46:30,706 - __main__ - INFO - Preparing data...
+2025-09-13 09:46:30,707 - __main__ - INFO - Data is ready!
+2025-09-13 09:46:30,707 - __main__ - INFO - Starting CA Service...
+2025-09-13 09:46:30,707 - __main__ - INFO - Starting CA service...
+2025-09-13 09:46:32,794 - __main__ - INFO - ca is ready!
+2025-09-13 09:46:32,794 - __main__ - INFO - CA service started successfully!
+2025-09-13 09:46:32,794 - __main__ - INFO - Starting FL Server...
+2025-09-13 09:46:32,795 - __main__ - INFO - Starting FL server...
+2025-09-13 09:46:37,804 - __main__ - INFO - FL server started successfully!
+2025-09-13 09:46:37,804 - __main__ - INFO - Starting FL Clients...
+2025-09-13 09:46:37,804 - __main__ - INFO - Starting FL clients...
+2025-09-13 09:46:37,813 - __main__ - INFO - Started client 1
+2025-09-13 09:46:39,821 - __main__ - INFO - Started client 2
+2025-09-13 09:46:41,829 - __main__ - INFO - Started client 3
+2025-09-13 09:46:43,839 - __main__ - INFO - Started client 4
+2025-09-13 09:46:45,850 - __main__ - INFO - Started client 5
+2025-09-13 09:46:47,869 - __main__ - INFO - Started client 6
+2025-09-13 09:46:49,882 - __main__ - INFO - Started client 7
+2025-09-13 09:46:51,891 - __main__ - INFO - Started client 8
+2025-09-13 09:46:53,901 - __main__ - INFO - Started client 9
+2025-09-13 09:46:55,915 - __main__ - INFO - Started client 10
+2025-09-13 09:46:57,916 - __main__ - INFO - Started 10 clients successfully!
+2025-09-13 09:46:57,916 - __main__ - INFO - Starting Dashboard...
+2025-09-13 09:46:57,917 - __main__ - INFO - Starting dashboard...
+2025-09-13 09:47:00,508 - __main__ - INFO - dashboard is ready!
+2025-09-13 09:47:00,508 - __main__ - INFO - Dashboard started successfully!
+2025-09-13 09:47:00,509 - __main__ - INFO - Generating certificates for clients...
+2025-09-13 09:47:02,587 - __main__ - WARNING - Failed to generate certificate for client 1
+2025-09-13 09:47:04,752 - __main__ - WARNING - Failed to generate certificate for client 2
+2025-09-13 09:47:06,924 - __main__ - WARNING - Failed to generate certificate for client 3
+2025-09-13 09:47:09,073 - __main__ - WARNING - Failed to generate certificate for client 4
+2025-09-13 09:47:11,213 - __main__ - WARNING - Failed to generate certificate for client 5
+2025-09-13 09:47:23,293 - __main__ - WARNING - Error generating certificate for client 6: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:47:35,357 - __main__ - WARNING - Error generating certificate for client 7: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:47:47,426 - __main__ - WARNING - Error generating certificate for client 8: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:47:59,496 - __main__ - WARNING - Error generating certificate for client 9: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:48:11,565 - __main__ - WARNING - Error generating certificate for client 10: HTTPConnectionPool(host='localhost', port=9000): Read timed out. (read timeout=10)
+2025-09-13 09:48:11,566 - __main__ - INFO - Starting system monitoring...
+2025-09-13 09:48:11,566 - __main__ - INFO - ============================================================
+2025-09-13 09:48:11,566 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:48:11,567 - __main__ - INFO - FL System started successfully!
+2025-09-13 09:48:11,567 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:48:11,567 - __main__ - INFO - Dashboard: http://localhost:5000
+2025-09-13 09:48:11,567 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:48:11,567 - __main__ - INFO - Server: http://localhost:8080
+2025-09-13 09:48:11,568 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:48:11,568 - __main__ - INFO - CA Service: http://localhost:9000
+2025-09-13 09:48:11,568 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:48:11,568 - __main__ - INFO - ============================================================
+2025-09-13 09:48:11,569 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:48:11,569 - __main__ - INFO - Opening dashboard: http://localhost:5000
+2025-09-13 09:48:11,569 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:48:11,711 - __main__ - INFO - System is running. Press Ctrl+C to stop.
+2025-09-13 09:48:21,570 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:48:21,570 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:48:21,570 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:48:21,571 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:48:21,571 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:48:21,571 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:48:21,571 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:48:31,572 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:48:31,572 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:48:31,572 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:48:31,572 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:48:31,574 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:48:31,574 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:48:31,574 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:48:41,575 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:48:41,575 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:48:41,575 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:48:41,576 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:48:41,576 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:48:41,576 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:48:41,576 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:48:51,577 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:48:51,577 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:48:51,578 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:48:51,578 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:48:51,578 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:48:51,578 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:48:51,579 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:49:01,580 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:49:01,580 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:49:01,580 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:49:01,580 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:49:01,581 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:49:01,581 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:49:01,581 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:49:11,582 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:49:11,582 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:49:11,582 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:49:11,582 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:49:11,582 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:49:11,583 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:49:11,583 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:49:21,584 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:49:21,584 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:49:21,584 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:49:21,584 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:49:21,584 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:49:21,585 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:49:21,585 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:49:31,586 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:49:31,586 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:49:31,586 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:49:31,586 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:49:31,586 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:49:31,586 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:49:31,588 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:49:41,588 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:49:41,588 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:49:41,589 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:49:41,589 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:49:41,589 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:49:41,589 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:49:41,590 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:49:51,590 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:49:51,590 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:49:51,590 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:49:51,590 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:49:51,590 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:49:51,590 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:49:51,590 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:50:01,591 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:50:01,591 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:50:01,591 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:50:01,591 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:50:01,592 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:50:01,592 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:50:01,592 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:50:11,593 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:50:11,593 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:50:11,593 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:50:11,595 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:50:11,595 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:50:11,595 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:50:11,595 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:50:21,596 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:50:21,596 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:50:21,597 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:50:21,597 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:50:21,597 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:50:21,597 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:50:21,597 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:50:31,598 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:50:31,598 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:50:31,598 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:50:31,598 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:50:31,599 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:50:31,599 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:50:31,599 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:50:41,600 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:50:41,600 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:50:41,600 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:50:41,600 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:50:41,601 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:50:41,601 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:50:41,602 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:50:51,603 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:50:51,603 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:50:51,604 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:50:51,604 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:50:51,605 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:50:51,605 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:50:51,606 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:51:01,606 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:51:01,606 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:51:01,607 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:51:01,608 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:51:01,608 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:51:01,608 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:51:01,608 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:51:11,609 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:51:11,609 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:51:11,609 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:51:11,609 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:51:11,610 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:51:11,610 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:51:11,610 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:51:21,610 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:51:21,610 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:51:21,610 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:51:21,610 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:51:21,612 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:51:21,612 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:51:21,612 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:51:31,613 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:51:31,613 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:51:31,613 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:51:31,613 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:51:31,613 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:51:31,613 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:51:31,614 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:51:41,615 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:51:41,615 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:51:41,615 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:51:41,615 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:51:41,615 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:51:41,615 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:51:41,615 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:51:51,617 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:51:51,617 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:51:51,617 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:51:51,617 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:51:51,617 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:51:51,618 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:51:51,618 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:52:01,619 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:52:01,619 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:52:01,619 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:52:01,621 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:52:01,621 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:52:01,621 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:52:01,621 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:52:11,622 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:52:11,622 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:52:11,622 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:52:11,622 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:52:11,623 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:52:11,623 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:52:11,623 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:52:21,624 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:52:21,624 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:52:21,624 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:52:21,625 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:52:21,625 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:52:21,625 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:52:21,625 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:52:31,627 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:52:31,627 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:52:31,627 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:52:31,627 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:52:31,628 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:52:31,628 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:52:31,628 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:52:41,629 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:52:41,629 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:52:41,629 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:52:41,630 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:52:41,630 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:52:41,630 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:52:41,630 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:52:51,631 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:52:51,631 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:52:51,631 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:52:51,631 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:52:51,631 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:52:51,632 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:52:51,632 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:53:01,633 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:53:01,633 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:53:01,633 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:53:01,633 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:53:01,634 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:53:01,634 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:53:01,634 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:53:11,635 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:53:11,635 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:53:11,635 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:53:11,636 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:53:11,636 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:53:11,636 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:53:11,637 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:53:21,638 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:53:21,638 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:53:21,638 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:53:21,638 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:53:21,639 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:53:21,639 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:53:21,639 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:53:31,640 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:53:31,640 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:53:31,640 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:53:31,641 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:53:31,641 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:53:31,641 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:53:31,642 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:53:41,642 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:53:41,642 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:53:41,642 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:53:41,642 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:53:41,643 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:53:41,643 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:53:41,643 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'
+2025-09-13 09:53:51,644 - __main__ - WARNING - server stopped unexpectedly
+2025-09-13 09:53:51,644 - __main__ - WARNING - Client 2 stopped unexpectedly
+2025-09-13 09:53:51,644 - __main__ - WARNING - Client 3 stopped unexpectedly
+2025-09-13 09:53:51,644 - __main__ - WARNING - Client 5 stopped unexpectedly
+2025-09-13 09:53:51,645 - __main__ - WARNING - Client 6 stopped unexpectedly
+2025-09-13 09:53:51,645 - __main__ - WARNING - Client 7 stopped unexpectedly
+2025-09-13 09:53:51,645 - __main__ - ERROR - Error in system monitoring: module 'psutil' has no attribute 'cpu_percent'

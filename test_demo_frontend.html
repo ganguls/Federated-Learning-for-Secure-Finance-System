@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Data Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Demo Data Frontend Test</h1>
+    
+    <div class="test-section">
+        <h2>API Tests</h2>
+        <button onclick="testSecurityAPI()">Test Security API</button>
+        <button onclick="testClientMetricsAPI()">Test Client Metrics API</button>
+        <button onclick="testDebugAPI()">Test Debug API</button>
+        <div id="api-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Demo Data Test</h2>
+        <button onclick="testDemoData()">Test Demo Data Creation</button>
+        <div id="demo-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Demo Table</h2>
+        <button onclick="refreshDemoData()">Refresh Demo Data</button>
+        <div id="demo-summary">
+            <p>Total Clients: <span id="total-clients">0</span></p>
+            <p>Malicious Clients: <span id="malicious-count">0</span></p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Client ID</th>
+                    <th>Status</th>
+                    <th>Accuracy</th>
+                    <th>Loss</th>
+                    <th>Attack Type</th>
+                    <th>Port</th>
+                </tr>
+            </thead>
+            <tbody id="demo-clients-tbody">
+                <!-- Demo data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let demoData = [];
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('api-results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+        }
+        
+        async function testSecurityAPI() {
+            try {
+                const response = await fetch('/api/security/status');
+                const data = await response.json();
+                log(`Security API: ${response.status} - ${JSON.stringify(data).substring(0, 100)}...`, 'success');
+            } catch (error) {
+                log(`Security API Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testClientMetricsAPI() {
+            try {
+                const response = await fetch('/api/metrics/clients');
+                const data = await response.json();
+                log(`Client Metrics API: ${response.status} - ${Object.keys(data).length} clients`, 'success');
+            } catch (error) {
+                log(`Client Metrics API Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDebugAPI() {
+            try {
+                const response = await fetch('/api/debug/demo');
+                const data = await response.json();
+                log(`Debug API: ${response.status} - ${data.count} clients`, 'success');
+            } catch (error) {
+                log(`Debug API Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDemoData() {
+            try {
+                // Test the exact same logic as the frontend
+                const securityResponse = await fetch('/api/security/status');
+                const securityData = await securityResponse.json();
+                
+                const clientsResponse = await fetch('/api/metrics/clients');
+                const clientsData = await clientsResponse.json();
+                
+                // Create demo clients exactly like frontend
+                const activeAttacks = securityData.simulator_status?.active_attacks || {};
+                const clients = [];
+                
+                for (let clientId = 1; clientId <= 10; clientId++) {
+                    const clientIdStr = clientId.toString();
+                    const isMalicious = activeAttacks[clientIdStr] ? true : false;
+                    const attackType = activeAttacks[clientIdStr] || 'None';
+                    
+                    // Get client metrics if available
+                    const clientInfo = clientsData[clientIdStr] || {};
+                    const clientMetrics = clientInfo.metrics || {};
+                    
+                    // Default values
+                    let accuracy = clientMetrics.accuracy || (0.8 + (clientId % 3) * 0.05);
+                    let loss = clientMetrics.loss || (0.3 - (clientId % 3) * 0.05);
+                    
+                    // Adjust for malicious clients
+                    if (isMalicious) {
+                        accuracy = Math.max(0.1, accuracy - 0.5);
+                        loss = Math.min(2.0, loss + 0.7);
+                    }
+                    
+                    clients.push({
+                        client_id: clientId,
+                        is_malicious: isMalicious,
+                        status: isMalicious ? 'Malicious' : 'Normal',
+                        accuracy: Math.round(accuracy * 10000) / 10000,
+                        loss: Math.round(loss * 10000) / 10000,
+                        attack_type: attackType,
+                        demo_port: 8081 + clientId
+                    });
+                }
+                
+                demoData = clients;
+                updateDemoTable();
+                updateDemoSummary();
+                
+                log(`Demo data created successfully: ${clients.length} clients`, 'success');
+                
+            } catch (error) {
+                log(`Demo data creation error: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateDemoTable() {
+            const tbody = document.getElementById('demo-clients-tbody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            demoData.forEach(client => {
+                const row = document.createElement('tr');
+                
+                const statusBadge = client.is_malicious 
+                    ? '<span style="color: #e74c3c; font-weight: bold;">Malicious</span>'
+                    : '<span style="color: #27ae60; font-weight: bold;">Normal</span>';
+                
+                row.innerHTML = `
+                    <td>${client.client_id}</td>
+                    <td>${statusBadge}</td>
+                    <td>${client.accuracy}</td>
+                    <td>${client.loss}</td>
+                    <td>${client.attack_type}</td>
+                    <td>${client.demo_port}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateDemoSummary() {
+            const maliciousCount = demoData.filter(client => client.is_malicious).length;
+            document.getElementById('malicious-count').textContent = maliciousCount;
+            document.getElementById('total-clients').textContent = demoData.length;
+        }
+        
+        async function refreshDemoData() {
+            log('Refreshing demo data...', 'info');
+            await testDemoData();
+        }
+        
+        // Auto-load demo data on page load
+        window.onload = function() {
+            log('Page loaded, testing demo data...', 'info');
+            testDemoData();
+        };
+    </script>
+</body>
+</html>
+

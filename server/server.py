@@ -14,11 +14,21 @@ from flwr.server.strategy import FedAvg
 from flwr.common import Metrics
 import json
 from pathlib import Path
+import logging
+from datetime import datetime
+
+# Import attack detection modules
+from attack_detection import DataPoisoningDetector
+from attack_simulator import DataPoisoningSimulator, AttackType
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class LoanServerStrategy(FedAvg):
     """Custom federated averaging strategy with malicious client detection and defense"""
     
-    def __init__(self, ca_url: str = None, *args, **kwargs):
+    def __init__(self, ca_url: str = None, enable_attack_detection: bool = True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.round_metrics = []
         self.client_metrics = {}
@@ -30,6 +40,26 @@ class LoanServerStrategy(FedAvg):
         self.client_update_history = {}  # Track client update patterns
         self.defense_threshold = 0.3  # Threshold for detecting anomalies
         self.clustering_enabled = True  # Enable K-means clustering defense
+        
+        # Advanced attack detection
+        self.enable_attack_detection = enable_attack_detection
+        if self.enable_attack_detection:
+            self.attack_detector = DataPoisoningDetector(
+                anomaly_threshold=0.1,
+                clustering_threshold=0.3,
+                statistical_threshold=2.0,
+                history_window=10
+            )
+            self.attack_simulator = DataPoisoningSimulator(attack_probability=0.1)
+            logger.info("Advanced attack detection system initialized")
+        
+        # Attack statistics
+        self.attack_statistics = {
+            'total_rounds': 0,
+            'attacks_detected': 0,
+            'clients_blocked': 0,
+            'false_positives': 0
+        }
     
     def validate_client_certificate(self, client_id: str) -> bool:
         """Validate client certificate with CA service"""
@@ -52,10 +82,50 @@ class LoanServerStrategy(FedAvg):
             return False
     
     def detect_malicious_clients(self, results):
-        """Detect malicious clients using clustering and statistical analysis"""
+        """Detect malicious clients using advanced attack detection system"""
         if not results or len(results) < 3:
             return set()
         
+        # Update round statistics
+        self.attack_statistics['total_rounds'] += 1
+        
+        # Use advanced attack detection if enabled
+        if self.enable_attack_detection:
+            try:
+                # Run comprehensive attack detection
+                detection_results = self.attack_detector.detect_attacks(results, self.attack_statistics['total_rounds'])
+                
+                # Combine all detection results
+                all_malicious = set()
+                for method, malicious_clients in detection_results.items():
+                    all_malicious.update(malicious_clients)
+                    if malicious_clients:
+                        logger.info(f"🔍 {method} detection found {len(malicious_clients)} malicious clients: {malicious_clients}")
+                
+                # Update malicious clients set
+                new_malicious = all_malicious - self.malicious_clients
+                if new_malicious:
+                    self.malicious_clients.update(new_malicious)
+                    self.attack_statistics['attacks_detected'] += len(new_malicious)
+                    self.attack_statistics['clients_blocked'] += len(new_malicious)
+                    logger.warning(f"🚨 New malicious clients detected: {new_malicious}")
+                
+                # Log attack summary
+                attack_summary = self.attack_detector.get_attack_summary()
+                logger.info(f"📊 Attack detection summary: {attack_summary}")
+                
+                return self.malicious_clients
+                
+            except Exception as e:
+                logger.error(f"Advanced attack detection failed: {e}")
+                # Fallback to basic detection
+                return self._basic_malicious_detection(results)
+        else:
+            # Use basic detection
+            return self._basic_malicious_detection(results)
+    
+    def _basic_malicious_detection(self, results):
+        """Basic malicious client detection (fallback)"""
         # Extract client updates and metrics
         client_updates = []
         client_ids = []
@@ -75,7 +145,7 @@ class LoanServerStrategy(FedAvg):
                     
                     # Track malicious behavior
                     if is_malicious or labels_flipped > 0:
-                        print(f"🚨 Detected malicious behavior from Client {client_id}: {labels_flipped} labels flipped")
+                        logger.warning(f"🚨 Basic detection: Malicious behavior from Client {client_id}: {labels_flipped} labels flipped")
                         self.malicious_clients.add(client_id)
                     
                     # Flatten parameters for clustering
@@ -110,11 +180,11 @@ class LoanServerStrategy(FedAvg):
                 # Mark clients in the malicious cluster
                 for i, (client_id, cluster_label) in enumerate(zip(client_ids, cluster_labels)):
                     if cluster_label == malicious_cluster and client_id != "unknown":
-                        print(f"🔍 Clustering detected potential malicious client: {client_id}")
+                        logger.warning(f"🔍 Basic clustering detected potential malicious client: {client_id}")
                         self.malicious_clients.add(client_id)
                 
             except Exception as e:
-                print(f"⚠️ Clustering defense failed: {e}")
+                logger.error(f"Basic clustering defense failed: {e}")
         
         return self.malicious_clients
     
@@ -143,6 +213,85 @@ class LoanServerStrategy(FedAvg):
             print(f"🛡️ Defense mechanism: Excluded {excluded_count} malicious clients from aggregation")
         
         return filtered_results
+    
+    def simulate_attack(self, client_id: str, attack_type: str = None):
+        """Simulate a data poisoning attack for a specific client"""
+        if not self.enable_attack_detection:
+            logger.warning("Attack detection not enabled")
+            return False
+        
+        try:
+            if attack_type:
+                attack_enum = AttackType(attack_type)
+                self.attack_simulator.set_client_attack(client_id, attack_enum)
+                logger.info(f"🎭 Attack simulation set for client {client_id}: {attack_type}")
+            else:
+                # Random attack type
+                attack_enum = random.choice(list(AttackType))
+                self.attack_simulator.set_client_attack(client_id, attack_enum)
+                logger.info(f"🎭 Random attack simulation set for client {client_id}: {attack_enum.value}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to simulate attack for client {client_id}: {e}")
+            return False
+    
+    def remove_attack(self, client_id: str):
+        """Remove attack simulation from a specific client"""
+        if not self.enable_attack_detection:
+            return False
+        
+        try:
+            self.attack_simulator.remove_client_attack(client_id)
+            logger.info(f"🎭 Attack simulation removed for client {client_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to remove attack for client {client_id}: {e}")
+            return False
+    
+    def get_attack_statistics(self) -> Dict:
+        """Get comprehensive attack statistics"""
+        stats = self.attack_statistics.copy()
+        
+        if self.enable_attack_detection:
+            attack_summary = self.attack_detector.get_attack_summary()
+            attack_status = self.attack_simulator.get_attack_status()
+            
+            stats.update({
+                'attack_detection_enabled': True,
+                'attack_summary': attack_summary,
+                'simulator_status': attack_status,
+                'malicious_clients': list(self.malicious_clients),
+                'detection_methods': list(self.attack_detector.detection_methods.keys())
+            })
+        else:
+            stats.update({
+                'attack_detection_enabled': False,
+                'malicious_clients': list(self.malicious_clients)
+            })
+        
+        return stats
+    
+    def get_security_report(self) -> Dict:
+        """Generate a comprehensive security report"""
+        report = {
+            'timestamp': datetime.now().isoformat(),
+            'round': self.attack_statistics['total_rounds'],
+            'security_status': 'SECURE' if not self.malicious_clients else 'COMPROMISED',
+            'malicious_clients_count': len(self.malicious_clients),
+            'malicious_clients': list(self.malicious_clients),
+            'attack_statistics': self.attack_statistics,
+            'defense_mechanisms': {
+                'certificate_validation': self.certificate_validation_enabled,
+                'attack_detection': self.enable_attack_detection,
+                'clustering_enabled': self.clustering_enabled
+            }
+        }
+        
+        if self.enable_attack_detection:
+            report['attack_detection'] = self.attack_detector.get_attack_summary()
+            report['attack_simulation'] = self.attack_simulator.get_attack_report()
+        
+        return report
     
     def aggregate_evaluate(
         self,
@@ -213,19 +362,40 @@ class LoanServerStrategy(FedAvg):
         return avg_accuracy
     
     def aggregate_fit(self, server_round, results, failures):
-        """Aggregate model weights with defense mechanism"""
-        print(f"\n🔄 Round {server_round}: Aggregating {len(results)} client updates...")
+        """Aggregate model weights with defense mechanism and attack simulation"""
+        logger.info(f"\n🔄 Round {server_round}: Aggregating {len(results)} client updates...")
+        
+        # Simulate attacks if attack detection is enabled
+        if self.enable_attack_detection:
+            simulated_results = []
+            for result in results:
+                if len(result) >= 3:
+                    parameters, metrics, num_examples = result[0], result[1], result[2]
+                    client_id = metrics.get("client_id", "unknown") if isinstance(metrics, dict) else "unknown"
+                    
+                    # Simulate attack if configured
+                    if client_id in self.attack_simulator.active_attacks:
+                        sim_parameters, sim_metrics = self.attack_simulator.simulate_attack(
+                            client_id, parameters, metrics
+                        )
+                        simulated_results.append((sim_parameters, sim_metrics, num_examples))
+                        logger.info(f"🎭 Simulated attack for client {client_id}")
+                    else:
+                        simulated_results.append(result)
+                else:
+                    simulated_results.append(result)
+            results = simulated_results
         
         # Detect malicious clients before aggregation
         detected_malicious = self.detect_malicious_clients(results)
         if detected_malicious:
-            print(f"🚨 Detected {len(detected_malicious)} malicious clients: {detected_malicious}")
+            logger.warning(f"🚨 Detected {len(detected_malicious)} malicious clients: {detected_malicious}")
         
         # Apply defense mechanism to filter malicious clients
         filtered_results = self.apply_defense_mechanism(results)
         
         if len(filtered_results) != len(results):
-            print(f"🛡️ Defense applied: Using {len(filtered_results)}/{len(results)} clients for aggregation")
+            logger.info(f"🛡️ Defense applied: Using {len(filtered_results)}/{len(results)} clients for aggregation")
         
         # Call parent aggregation with filtered results
         return super().aggregate_fit(server_round, filtered_results, failures)

@@ -1017,6 +1017,9 @@
                     <div class="tab" data-tab="demo">
                         <i class="fas fa-flask"></i> Demo
                     </div>
+                    <div class="tab" data-tab="security">
+                        <i class="fas fa-shield-alt"></i> Security
+                    </div>
                 </div>
 
                 <div class="tab-content active" id="overview">
@@ -1255,6 +1258,108 @@
                     </div>
                 </div>
 
+                <div class="tab-content" id="security">
+                    <div class="actions-bar">
+                        <button class="btn danger" onclick="simulateRandomAttack()">
+                            <i class="fas fa-bug"></i> Simulate Random Attack
+                        </button>
+                        <button class="btn warning" onclick="simulateSpecificAttack()">
+                            <i class="fas fa-exclamation-triangle"></i> Simulate Specific Attack
+                        </button>
+                        <button class="btn secondary" onclick="clearAllAttacks()">
+                            <i class="fas fa-shield-alt"></i> Clear All Attacks
+                        </button>
+                        <button class="btn secondary" onclick="refreshSecurityData()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-shield-alt"></i> Security Status
+                            </h3>
+                            <div class="chart-actions">
+                                <span class="status-indicator" id="securityStatus">
+                                    <span class="status-dot" id="securityStatusDot"></span>
+                                    <span id="securityStatusText">Checking...</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <div class="security-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                                <div class="security-metric">
+                                    <h4>Attack Detection</h4>
+                                    <div class="metric-value" id="attackDetectionStatus">Unknown</div>
+                                </div>
+                                <div class="security-metric">
+                                    <h4>Malicious Clients</h4>
+                                    <div class="metric-value" id="maliciousClientsCount">0</div>
+                                </div>
+                                <div class="security-metric">
+                                    <h4>Attacks Detected</h4>
+                                    <div class="metric-value" id="attacksDetectedCount">0</div>
+                                </div>
+                                <div class="security-metric">
+                                    <h4>Clients Blocked</h4>
+                                    <div class="metric-value" id="clientsBlockedCount">0</div>
+                                </div>
+                            </div>
+                            
+                            <div class="attack-controls" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                                <div class="attack-simulation">
+                                    <h4>Attack Simulation</h4>
+                                    <div style="margin-bottom: 1rem;">
+                                        <label for="attackClientId">Client ID:</label>
+                                        <select id="attackClientId" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                                            <option value="1">Client 1</option>
+                                            <option value="2">Client 2</option>
+                                            <option value="3">Client 3</option>
+                                            <option value="4">Client 4</option>
+                                            <option value="5">Client 5</option>
+                                            <option value="6">Client 6</option>
+                                            <option value="7">Client 7</option>
+                                            <option value="8">Client 8</option>
+                                            <option value="9">Client 9</option>
+                                            <option value="10">Client 10</option>
+                                        </select>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <label for="attackType">Attack Type:</label>
+                                        <select id="attackType" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+                                            <option value="random">Random Attack</option>
+                                            <option value="label_flipping">Label Flipping</option>
+                                            <option value="gradient_poisoning">Gradient Poisoning</option>
+                                            <option value="model_poisoning">Model Poisoning</option>
+                                            <option value="backdoor">Backdoor Attack</option>
+                                            <option value="byzantine">Byzantine Attack</option>
+                                            <option value="sign_flipping">Sign Flipping</option>
+                                            <option value="scaling_attack">Scaling Attack</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn danger" onclick="simulateClientAttack()" style="width: 100%;">
+                                        <i class="fas fa-bug"></i> Simulate Attack
+                                    </button>
+                                </div>
+                                
+                                <div class="attack-status">
+                                    <h4>Active Attacks</h4>
+                                    <div id="activeAttacksList" style="background: var(--current-card-bg); border: 1px solid var(--current-border-color); border-radius: 8px; padding: 1rem; min-height: 200px;">
+                                        <p style="color: var(--current-text-muted); text-align: center;">No active attacks</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="security-log" style="background: var(--current-card-bg); border: 1px solid var(--current-border-color); border-radius: 8px; padding: 1rem;">
+                                <h4>Security Log</h4>
+                                <div id="securityLog" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
+                                    <p style="color: var(--current-text-muted);">Security events will appear here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="tab-content" id="demo">
                     <div class="actions-bar">
                         <button class="btn danger" onclick="resetAllClients()">
@@ -1308,7 +1413,7 @@
                                             <th style="padding: 12px; text-align: left; font-weight: 600;">Status</th>
                                             <th style="padding: 12px; text-align: left; font-weight: 600;">Accuracy</th>
                                             <th style="padding: 12px; text-align: left; font-weight: 600;">Loss</th>
-                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Labels Flipped</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600;">Attack Type</th>
                                             <th style="padding: 12px; text-align: left; font-weight: 600;">Actions</th>
                                         </tr>
                                     </thead>
@@ -2233,15 +2338,44 @@
         let demoUpdateInterval;
 
         function refreshDemoData() {
-            fetch('/api/demo/clients')
+            // Get security status to determine which clients are malicious
+            fetch('/api/security/status')
                 .then(response => response.json())
-                .then(data => {
-                    if (data.clients) {
-                        demoData = data.clients;
-                        updateDemoTable();
-                        updateDemoSummary();
-                        showNotification('Demo data refreshed successfully', 'success');
-                    }
+                .then(securityData => {
+                    // Get client metrics to get current status
+                    return fetch('/api/metrics/clients')
+                        .then(response => response.json())
+                        .then(clientData => {
+                            // Combine security and client data
+                            const clients = [];
+                            
+                            // Get active attacks from security data
+                            const activeAttacks = securityData.simulator_status?.active_attacks || {};
+                            
+                            for (let clientId = 1; clientId <= 10; clientId++) {
+                                const clientIdStr = clientId.toString();
+                                const isMalicious = activeAttacks[clientIdStr] ? true : false;
+                                const attackType = activeAttacks[clientIdStr] || 'None';
+                                
+                                // Get client metrics if available
+                                const clientMetrics = clientData[clientIdStr] || {};
+                                
+                                clients.push({
+                                    client_id: clientId,
+                                    is_malicious: isMalicious,
+                                    status: isMalicious ? 'Malicious' : 'Normal',
+                                    accuracy: clientMetrics.metrics?.accuracy || (isMalicious ? 0.3 : 0.8),
+                                    loss: clientMetrics.metrics?.loss || (isMalicious ? 1.2 : 0.3),
+                                    attack_type: attackType,
+                                    demo_port: 8081 + clientId
+                                });
+                            }
+                            
+                            demoData = clients;
+                            updateDemoTable();
+                            updateDemoSummary();
+                            showNotification('Demo data refreshed successfully', 'success');
+                        });
                 })
                 .catch(error => {
                     console.error('Error refreshing demo data:', error);
@@ -2272,7 +2406,7 @@
                     <td style="padding: 12px;">${statusBadge}</td>
                     <td style="padding: 12px;">${(client.accuracy * 100).toFixed(2)}%</td>
                     <td style="padding: 12px;">${client.loss.toFixed(4)}</td>
-                    <td style="padding: 12px;">${client.is_malicious ? 'All labels' : 'None'}</td>
+                    <td style="padding: 12px;">${client.is_malicious ? client.attack_type : 'None'}</td>
                     <td style="padding: 12px;">
                         <button class="${toggleButtonClass}" onclick="toggleClientStatus(${client.client_id})" style="padding: 6px 12px; font-size: 0.9em;">
                             <i class="${toggleButtonIcon}"></i> ${toggleButtonText}
@@ -2306,28 +2440,65 @@
         function toggleClientStatus(clientId) {
             document.getElementById('demo-status').textContent = 'Updating...';
             
-            fetch(`/api/demo/toggle/${clientId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const statusText = data.is_malicious ? 'malicious' : 'normal';
-                    showNotification(`Client ${clientId} set to ${statusText}`, 'success');
-                    refreshDemoData();
-                } else {
-                    showNotification(`Failed to toggle client ${clientId}: ${data.error}`, 'error');
-                }
-                document.getElementById('demo-status').textContent = 'Ready';
-            })
-            .catch(error => {
-                console.error('Error toggling client:', error);
-                showNotification(`Error toggling client ${clientId}`, 'error');
-                document.getElementById('demo-status').textContent = 'Ready';
-            });
+            // Check if client is already malicious
+            const isCurrentlyMalicious = demoData.find(client => client.client_id === clientId)?.is_malicious || false;
+            
+            if (isCurrentlyMalicious) {
+                // Remove attack simulation
+                fetch('/api/security/attack/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: clientId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(`Client ${clientId} set to normal`, 'success');
+                        addSecurityLog(`🛡️ Client ${clientId} attack simulation removed`);
+                        refreshDemoData();
+                    } else {
+                        showNotification(`Failed to remove attack for client ${clientId}: ${data.error}`, 'error');
+                    }
+                    document.getElementById('demo-status').textContent = 'Ready';
+                })
+                .catch(error => {
+                    console.error('Error removing attack:', error);
+                    showNotification(`Error removing attack for client ${clientId}`, 'error');
+                    document.getElementById('demo-status').textContent = 'Ready';
+                });
+            } else {
+                // Simulate attack
+                fetch('/api/security/attack/simulate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_id: clientId,
+                        attack_type: 'random'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(`Client ${clientId} set to malicious`, 'success');
+                        addSecurityLog(`🎭 Client ${clientId} attack simulation started`);
+                        refreshDemoData();
+                    } else {
+                        showNotification(`Failed to simulate attack for client ${clientId}: ${data.error}`, 'error');
+                    }
+                    document.getElementById('demo-status').textContent = 'Ready';
+                })
+                .catch(error => {
+                    console.error('Error simulating attack:', error);
+                    showNotification(`Error simulating attack for client ${clientId}`, 'error');
+                    document.getElementById('demo-status').textContent = 'Ready';
+                });
+            }
         }
 
         function resetAllClients() {
@@ -2337,7 +2508,7 @@
             
             document.getElementById('demo-status').textContent = 'Resetting...';
             
-            fetch('/api/demo/reset_all', {
+            fetch('/api/security/attack/clear', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2346,7 +2517,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showNotification(data.message, 'success');
+                    showNotification('All clients reset to normal status', 'success');
+                    addSecurityLog('🛡️ All attack simulations cleared');
                     refreshDemoData();
                 } else {
                     showNotification(`Failed to reset clients: ${data.error}`, 'error');
@@ -2361,7 +2533,7 @@
         }
 
         function simulateAttack() {
-            // Simulate a Byzantine attack by making 30% of clients malicious
+            // Simulate attacks by making 30% of clients malicious
             const clientCount = demoData.length;
             const attackCount = Math.ceil(clientCount * 0.3);
             const normalClients = demoData.filter(client => !client.is_malicious);
@@ -2383,16 +2555,48 @@
                 .slice(0, Math.min(attackCount, normalClients.length));
             
             let completed = 0;
+            const attackTypes = ['label_flipping', 'gradient_poisoning', 'model_poisoning', 'byzantine'];
+            
             clientsToAttack.forEach(client => {
                 setTimeout(() => {
-                    toggleClientStatus(client.client_id);
-                    completed++;
-                    if (completed === clientsToAttack.length) {
-                        setTimeout(() => {
-                            document.getElementById('demo-status').textContent = 'Ready';
-                            showNotification(`Attack simulation complete - ${clientsToAttack.length} clients compromised`, 'warning');
-                        }, 1000);
-                    }
+                    // Select random attack type
+                    const attackType = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+                    
+                    fetch('/api/security/attack/simulate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            client_id: client.client_id,
+                            attack_type: attackType
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            addSecurityLog(`🎭 Client ${client.client_id} attack simulation started (${attackType})`);
+                        }
+                        completed++;
+                        if (completed === clientsToAttack.length) {
+                            setTimeout(() => {
+                                document.getElementById('demo-status').textContent = 'Ready';
+                                showNotification(`Attack simulation complete - ${clientsToAttack.length} clients compromised`, 'warning');
+                                refreshDemoData();
+                            }, 1000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error simulating attack:', error);
+                        completed++;
+                        if (completed === clientsToAttack.length) {
+                            setTimeout(() => {
+                                document.getElementById('demo-status').textContent = 'Ready';
+                                showNotification(`Attack simulation complete - ${clientsToAttack.length} clients compromised`, 'warning');
+                                refreshDemoData();
+                            }, 1000);
+                        }
+                    });
                 }, Math.random() * 2000); // Stagger the attacks
             });
         }
@@ -2410,13 +2614,217 @@
             }, 5000); // Refresh every 5 seconds
         }
 
-        // Override switchTab to handle demo tab
+        // Security Tab Functions
+        let securityData = {};
+        let securityUpdateInterval;
+
+        function refreshSecurityData() {
+            fetch('/api/security/status')
+                .then(response => response.json())
+                .then(data => {
+                    securityData = data;
+                    updateSecurityDisplay();
+                    showNotification('Security data refreshed', 'success');
+                })
+                .catch(error => {
+                    console.error('Error refreshing security data:', error);
+                    showNotification('Failed to refresh security data', 'error');
+                });
+        }
+
+        function updateSecurityDisplay() {
+            // Update security status
+            const securityStatusDot = document.getElementById('securityStatusDot');
+            const securityStatusText = document.getElementById('securityStatusText');
+            
+            if (securityData.security_status === 'SECURE') {
+                securityStatusDot.className = 'status-dot';
+                securityStatusText.textContent = 'Secure';
+            } else if (securityData.security_status === 'COMPROMISED') {
+                securityStatusDot.className = 'status-dot stopped';
+                securityStatusText.textContent = 'Compromised';
+            } else {
+                securityStatusDot.className = 'status-dot starting';
+                securityStatusText.textContent = 'Unknown';
+            }
+
+            // Update metrics
+            document.getElementById('attackDetectionStatus').textContent = 
+                securityData.attack_detection_enabled ? 'Enabled' : 'Disabled';
+            document.getElementById('maliciousClientsCount').textContent = 
+                securityData.malicious_clients ? securityData.malicious_clients.length : 0;
+            document.getElementById('attacksDetectedCount').textContent = 
+                securityData.attack_statistics ? securityData.attack_statistics.attacks_detected : 0;
+            document.getElementById('clientsBlockedCount').textContent = 
+                securityData.attack_statistics ? securityData.attack_statistics.clients_blocked : 0;
+
+            // Update active attacks list
+            updateActiveAttacksList();
+        }
+
+        function updateActiveAttacksList() {
+            const activeAttacksList = document.getElementById('activeAttacksList');
+            
+            if (securityData.simulator_status && securityData.simulator_status.active_attacks) {
+                const attacks = securityData.simulator_status.active_attacks;
+                if (Object.keys(attacks).length > 0) {
+                    let html = '';
+                    for (const [clientId, attackType] of Object.entries(attacks)) {
+                        html += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--current-border-color);">
+                                <span><strong>Client ${clientId}</strong>: ${attackType}</span>
+                                <button class="btn secondary" onclick="removeClientAttack('${clientId}')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                    <i class="fas fa-times"></i> Remove
+                                </button>
+                            </div>
+                        `;
+                    }
+                    activeAttacksList.innerHTML = html;
+                } else {
+                    activeAttacksList.innerHTML = '<p style="color: var(--current-text-muted); text-align: center;">No active attacks</p>';
+                }
+            } else {
+                activeAttacksList.innerHTML = '<p style="color: var(--current-text-muted); text-align: center;">No active attacks</p>';
+            }
+        }
+
+        function simulateClientAttack() {
+            const clientId = document.getElementById('attackClientId').value;
+            const attackType = document.getElementById('attackType').value;
+            
+            fetch('/api/security/attack/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    client_id: clientId,
+                    attack_type: attackType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Attack simulation started for Client ${clientId}`, 'success');
+                    addSecurityLog(`🎭 Attack simulation started for Client ${clientId} (${attackType})`);
+                    refreshSecurityData();
+                } else {
+                    showNotification(`Failed to simulate attack: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error simulating attack:', error);
+                showNotification('Error simulating attack', 'error');
+            });
+        }
+
+        function removeClientAttack(clientId) {
+            fetch('/api/security/attack/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    client_id: clientId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Attack simulation removed for Client ${clientId}`, 'success');
+                    addSecurityLog(`🛡️ Attack simulation removed for Client ${clientId}`);
+                    refreshSecurityData();
+                } else {
+                    showNotification(`Failed to remove attack: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing attack:', error);
+                showNotification('Error removing attack', 'error');
+            });
+        }
+
+        function clearAllAttacks() {
+            if (!confirm('Are you sure you want to clear all attack simulations?')) {
+                return;
+            }
+            
+            fetch('/api/security/attack/clear', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('All attack simulations cleared', 'success');
+                    addSecurityLog('🛡️ All attack simulations cleared');
+                    refreshSecurityData();
+                } else {
+                    showNotification(`Failed to clear attacks: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing attacks:', error);
+                showNotification('Error clearing attacks', 'error');
+            });
+        }
+
+        function simulateRandomAttack() {
+            const randomClientId = Math.floor(Math.random() * 10) + 1;
+            document.getElementById('attackClientId').value = randomClientId;
+            document.getElementById('attackType').value = 'random';
+            simulateClientAttack();
+        }
+
+        function simulateSpecificAttack() {
+            const attackTypes = ['label_flipping', 'gradient_poisoning', 'model_poisoning', 'byzantine'];
+            const randomAttackType = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+            const randomClientId = Math.floor(Math.random() * 10) + 1;
+            
+            document.getElementById('attackClientId').value = randomClientId;
+            document.getElementById('attackType').value = randomAttackType;
+            simulateClientAttack();
+        }
+
+        function addSecurityLog(message) {
+            const securityLog = document.getElementById('securityLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: var(--current-text-muted);">[${timestamp}]</span> ${message}`;
+            logEntry.style.marginBottom = '0.5rem';
+            
+            securityLog.insertBefore(logEntry, securityLog.firstChild);
+            
+            // Keep only last 50 log entries
+            while (securityLog.children.length > 50) {
+                securityLog.removeChild(securityLog.lastChild);
+            }
+        }
+
+        function startSecurityAutoRefresh() {
+            if (securityUpdateInterval) {
+                clearInterval(securityUpdateInterval);
+            }
+            securityUpdateInterval = setInterval(() => {
+                const securityTab = document.getElementById('security');
+                if (securityTab && securityTab.classList.contains('active')) {
+                    refreshSecurityData();
+                }
+            }, 10000); // Refresh every 10 seconds
+        }
+
+        // Override switchTab to handle demo and security tabs
         const originalSwitchTab = switchTab;
         switchTab = function(tabName) {
             originalSwitchTab(tabName);
             if (tabName === 'demo') {
                 refreshDemoData();
                 startDemoAutoRefresh();
+            } else if (tabName === 'security') {
+                refreshSecurityData();
+                startSecurityAutoRefresh();
             }
         };
 
