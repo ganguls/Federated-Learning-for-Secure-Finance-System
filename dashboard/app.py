@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Pure Flask app without SocketIO to avoid the conflict
+Enhanced with real FL detection integration
 """
 
 import os
@@ -20,6 +21,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import StandardScaler
 import random
 
+# Import detection API
+from detection_api import detection_bp
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +31,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'fl-dashboard-secret-key-2024'
 CORS(app)
+
+# Register detection blueprint
+app.register_blueprint(detection_bp)
 
 class FLDashboard:
     def __init__(self):
@@ -76,16 +83,120 @@ def logout():
 def health():
     return jsonify({'status': 'healthy', 'timestamp': time.time()})
 
+# Enhanced detection endpoint for real FL integration
+@app.route('/api/detection/run_enhanced', methods=['POST'])
+def run_enhanced_detection():
+    """Run enhanced detection on real FL results"""
+    try:
+        data = request.get_json() or {}
+        use_cached = data.get('use_cached', True)
+        
+        # This will use the detection API manager
+        from detection_api import api_manager
+        
+        result = api_manager.run_detection(use_cached=use_cached)
+        
+        if result.get('success'):
+            # Update dashboard metrics
+            detection_metrics = result.get('detection_metrics', {})
+            if detection_metrics:
+                dashboard.detection_metrics['total_detections'] += 1
+                dashboard.detection_metrics['accuracy'] = float(detection_metrics.get('accuracy', 0))
+                dashboard.detection_metrics['precision'] = float(detection_metrics.get('precision', 0))
+                dashboard.detection_metrics['recall'] = float(detection_metrics.get('recall', 0))
+                dashboard.detection_metrics['f1_score'] = float(detection_metrics.get('f1_score', 0))
+            
+            # Save detection results to Docker volume
+            try:
+                detection_results_file = "/app/detection_results/latest_detection.json"
+                os.makedirs(os.path.dirname(detection_results_file), exist_ok=True)
+                with open(detection_results_file, 'w') as f:
+                    json.dump(result, f, indent=2, default=str)
+                logger.info(f"Detection results saved to {detection_results_file}")
+            except Exception as e:
+                logger.warning(f"Could not save detection results: {e}")
+            
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error in enhanced detection: {e}")
+        return jsonify({'error': str(e), 'success': False}), 500
+
 # PURE FLASK: No SocketIO
 @app.route('/api/detection/run_demo', methods=['POST'])
 def run_detection_demo():
-    """Run attack detection demo - PURE FLASK APPROACH"""
+    """Run comprehensive attack detection demo with all 3 methods"""
     try:
         data = request.get_json() or {}
         malicious_percentage = data.get('malicious_percentage', 20)
         attack_type = data.get('attack_type', 'label_flipping')
         epsilon = data.get('epsilon', 1.0)
         
+        # Import comprehensive detection pipeline
+        try:
+            sys.path.append('/app')
+            from comprehensive_attack_detection import ComprehensiveDetectionPipeline
+            
+            # Initialize and run comprehensive detection
+            pipeline = ComprehensiveDetectionPipeline()
+            results = pipeline.run_comprehensive_detection(
+                malicious_percentage=malicious_percentage,
+                attack_type=attack_type,
+                epsilon=epsilon
+            )
+            
+            if 'error' in results:
+                return jsonify({
+                    'success': False,
+                    'error': results['error']
+                }), 500
+            
+            # Store in history if successful
+            dashboard.detection_history.append(results)
+            
+            # Update metrics with ensemble results
+            ensemble_metrics = results.get('fusion_results', {}).get('ensemble_metrics', {})
+            if ensemble_metrics:
+                dashboard.detection_metrics['total_detections'] += 1
+                dashboard.detection_metrics['accuracy'] = float(ensemble_metrics.get('accuracy', 0))
+                dashboard.detection_metrics['f1_score'] = float(ensemble_metrics.get('f1_score', 0))
+                
+                # Calculate precision and recall from individual methods
+                method_results = results.get('detection_methods', {})
+                avg_precision = np.mean([
+                    method.get('metrics', {}).get('precision', 0) 
+                    for method in method_results.values()
+                ])
+                avg_recall = np.mean([
+                    method.get('metrics', {}).get('recall', 0) 
+                    for method in method_results.values()
+                ])
+                
+                dashboard.detection_metrics['precision'] = float(avg_precision)
+                dashboard.detection_metrics['recall'] = float(avg_recall)
+            
+            # Return comprehensive results
+            return jsonify({
+                'success': True,
+                'result': results
+            })
+            
+        except ImportError as e:
+            logger.error(f"Could not import comprehensive detection: {e}")
+            # Fallback to basic detection
+            return run_basic_detection_fallback(malicious_percentage, attack_type, epsilon)
+        
+    except Exception as e:
+        logger.error(f"Error running comprehensive detection demo: {e}")
+        response = jsonify({'success': False, 'error': str(e)})
+        response.status_code = 500
+        return response
+
+def run_basic_detection_fallback(malicious_percentage, attack_type, epsilon):
+    """Fallback to basic detection if comprehensive detection fails"""
+    try:
         # Call external Python script - use absolute path in Docker container
         script_path = '/app/attack_detection_service.py'
         
@@ -128,7 +239,7 @@ def run_detection_demo():
             return response
         
     except Exception as e:
-        logger.error(f"Error running detection demo: {e}")
+        logger.error(f"Error in fallback detection: {e}")
         response = jsonify({'success': False, 'error': str(e)})
         response.status_code = 500
         return response

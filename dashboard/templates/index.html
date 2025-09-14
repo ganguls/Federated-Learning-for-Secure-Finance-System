@@ -1266,8 +1266,11 @@
                         <button class="btn secondary" onclick="simulateAttack()">
                             <i class="fas fa-bug"></i> Simulate Attack
                         </button>
-                        <button class="btn primary" onclick="runAttackDetection()">
+                        <button class="btn primary" onclick="runEnhancedDetection()">
                             <i class="fas fa-shield-alt"></i> Run Detection
+                        </button>
+                        <button class="btn secondary" onclick="runAttackDetection()">
+                            <i class="fas fa-flask"></i> Run Demo
                         </button>
                         <button class="btn warning" onclick="toggleDetection()">
                             <i class="fas fa-toggle-on"></i> Toggle Detection
@@ -2484,8 +2487,38 @@
         let detectionChart = null;
         let detectionResults = null;
 
+        function runEnhancedDetection() {
+            document.getElementById('detection-status').textContent = 'Running Enhanced Detection...';
+            
+            fetch('/api/detection/run_enhanced', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    use_cached: false
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    detectionResults = data;
+                    displayEnhancedDetectionResults(detectionResults);
+                    showNotification('Enhanced detection completed successfully', 'success');
+                } else {
+                    showNotification('Enhanced detection failed: ' + data.error, 'error');
+                }
+                document.getElementById('detection-status').textContent = 'Ready';
+            })
+            .catch(error => {
+                console.error('Error running enhanced detection:', error);
+                showNotification('Error running enhanced detection', 'error');
+                document.getElementById('detection-status').textContent = 'Ready';
+            });
+        }
+
         function runAttackDetection() {
-            document.getElementById('detection-status').textContent = 'Running Detection...';
+            document.getElementById('detection-status').textContent = 'Running Demo Detection...';
             
             fetch('/api/detection/run_demo', {
                 method: 'POST',
@@ -2501,15 +2534,15 @@
                 if (data.success) {
                     detectionResults = data.result;
                     displayDetectionResults(detectionResults);
-                    showNotification('Attack detection completed successfully', 'success');
+                    showNotification('Demo detection completed successfully', 'success');
                 } else {
-                    showNotification('Attack detection failed: ' + data.error, 'error');
+                    showNotification('Demo detection failed: ' + data.error, 'error');
                 }
                 document.getElementById('detection-status').textContent = 'Ready';
             })
             .catch(error => {
-                console.error('Error running attack detection:', error);
-                showNotification('Error running attack detection', 'error');
+                console.error('Error running demo detection:', error);
+                showNotification('Error running demo detection', 'error');
                 document.getElementById('detection-status').textContent = 'Ready';
             });
         }
@@ -2546,6 +2579,41 @@
                 showNotification('Error running attack detection', 'error');
                 document.getElementById('detection-status').textContent = 'Ready';
             });
+        }
+
+        function displayEnhancedDetectionResults(results) {
+            // Show results section
+            document.getElementById('detection-results').style.display = 'block';
+            document.getElementById('no-detection-results').style.display = 'none';
+            
+            // Update summary cards with enhanced detection data
+            const detected_malicious = results.detected_malicious || [];
+            const total_clients = results.total_clients || 0;
+            
+            document.getElementById('true-malicious-count').textContent = 'N/A (Real FL)';
+            document.getElementById('detected-malicious-count').textContent = detected_malicious.length;
+            
+            const metrics = results.detection_metrics || {};
+            const accuracy = metrics.accuracy || 0;
+            const f1 = metrics.f1_score || 0;
+            
+            document.getElementById('result-accuracy').textContent = (accuracy * 100).toFixed(2) + '%';
+            document.getElementById('result-f1').textContent = f1.toFixed(3);
+            
+            // Update main dashboard metrics
+            document.getElementById('detection-accuracy').textContent = (accuracy * 100).toFixed(2) + '%';
+            document.getElementById('detection-f1').textContent = f1.toFixed(3);
+            
+            // Show detection method and timing
+            const method = results.detection_summary?.detection_method || 'unknown';
+            const time = results.detection_time || 0;
+            console.log(`Enhanced Detection: ${method}, Time: ${time.toFixed(3)}s, Clients: ${total_clients}`);
+            
+            // Create detection chart
+            createDetectionChart(results);
+            
+            // Show detection details
+            showDetectionDetails(results);
         }
 
         function displayDetectionResults(results) {

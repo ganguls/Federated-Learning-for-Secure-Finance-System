@@ -308,6 +308,68 @@
             color: var(--dark-color);
         }
 
+        .client-confidence {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: var(--info-color);
+            font-weight: 500;
+        }
+
+        .method-comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .method-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .method-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .method-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .method-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--light-color);
+            border-radius: 8px;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 0.9rem;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
         .notification {
             position: fixed;
             top: 20px;
@@ -734,6 +796,77 @@
 
         // Display results
         function displayResults(results) {
+            // Check if this is comprehensive detection results
+            if (results.summary && results.detection_methods) {
+                displayComprehensiveResults(results);
+            } else {
+                displayBasicResults(results);
+            }
+        }
+
+        // Display comprehensive detection results
+        function displayComprehensiveResults(results) {
+            // Update metrics with ensemble results
+            const ensembleMetrics = results.fusion_results.ensemble_metrics;
+            document.getElementById('accuracyValue').textContent = (ensembleMetrics.accuracy * 100).toFixed(1) + '%';
+            document.getElementById('f1Value').textContent = (ensembleMetrics.f1_score * 100).toFixed(1) + '%';
+            document.getElementById('trueMaliciousValue').textContent = results.scenario.true_malicious.length;
+            document.getElementById('detectedValue').textContent = results.summary.final_detected_malicious.length;
+
+            // Create comprehensive client details
+            const clientDetails = [];
+            const totalClients = results.scenario.total_clients;
+            const trueMalicious = results.scenario.true_malicious;
+            const finalDetected = results.summary.final_detected_malicious;
+
+            for (let i = 0; i < totalClients; i++) {
+                const isMalicious = trueMalicious.includes(i);
+                const isDetected = finalDetected.includes(i);
+                
+                // Get loss from basic detection method
+                const basicMethod = results.detection_methods.basic_detection;
+                const loss = basicMethod.client_losses ? basicMethod.client_losses[i] : Math.random() * 0.5;
+                
+                clientDetails.push({
+                    client_id: i,
+                    loss: loss,
+                    is_malicious: isMalicious,
+                    attack_type: isMalicious ? results.scenario.attack_type : 'none',
+                    detection_confidence: results.fusion_results.client_scores ? 
+                        (results.fusion_results.client_scores[i] || 0) : 0
+                });
+            }
+
+            // Update chart with comprehensive data
+            const clientIds = clientDetails.map(c => `Client ${c.client_id}`);
+            const losses = clientDetails.map(c => c.loss);
+            const colors = clientDetails.map(c => {
+                if (c.is_malicious && finalDetected.includes(c.client_id)) {
+                    return '#e74c3c'; // Red - correctly detected malicious
+                } else if (c.is_malicious) {
+                    return '#f39c12'; // Orange - missed malicious
+                } else if (finalDetected.includes(c.client_id)) {
+                    return '#9b59b6'; // Purple - false positive
+                } else {
+                    return '#27ae60'; // Green - correctly identified benign
+                }
+            });
+
+            detectionChart.data.labels = clientIds;
+            detectionChart.data.datasets[0].data = losses;
+            detectionChart.data.datasets[0].backgroundColor = colors;
+            detectionChart.data.datasets[0].borderColor = colors;
+            detectionChart.update();
+
+            // Update client grid with comprehensive data
+            updateClientGridComprehensive(clientDetails, finalDetected, results);
+
+            // Display method comparison
+            displayMethodComparison(results.detection_methods);
+        }
+
+        // Display basic detection results (fallback)
+        function displayBasicResults(results) {
             // Update metrics
             document.getElementById('accuracyValue').textContent = (results.metrics.accuracy * 100).toFixed(1) + '%';
             document.getElementById('f1Value').textContent = (results.metrics.f1_score * 100).toFixed(1) + '%';
@@ -763,6 +896,97 @@
 
             // Update client grid
             updateClientGrid(results);
+        }
+
+        // Update client grid with comprehensive results
+        function updateClientGridComprehensive(clientDetails, detectedMalicious, results) {
+            const clientGrid = document.getElementById('clientGrid');
+            clientGrid.innerHTML = '';
+
+            clientDetails.forEach(client => {
+                const clientCard = document.createElement('div');
+                clientCard.className = 'client-card';
+                
+                let statusClass = 'benign';
+                let statusText = 'Benign';
+                
+                if (client.is_malicious && detectedMalicious.includes(client.client_id)) {
+                    statusClass = 'malicious';
+                    statusText = 'Malicious (Detected)';
+                } else if (client.is_malicious) {
+                    statusClass = 'malicious';
+                    statusText = 'Malicious (Missed)';
+                } else if (detectedMalicious.includes(client.client_id)) {
+                    statusClass = 'detected';
+                    statusText = 'False Positive';
+                }
+
+                clientCard.classList.add(statusClass);
+                
+                // Add confidence score if available
+                const confidenceScore = client.detection_confidence ? 
+                    `Confidence: ${(client.detection_confidence * 100).toFixed(1)}%` : '';
+                
+                clientCard.innerHTML = `
+                    <div class="client-id">Client ${client.client_id}</div>
+                    <div class="client-status status-${statusClass}">${statusText}</div>
+                    <div class="client-loss">Loss: ${(client.loss * 100).toFixed(1)}%</div>
+                    ${confidenceScore ? `<div class="client-confidence">${confidenceScore}</div>` : ''}
+                `;
+
+                clientGrid.appendChild(clientCard);
+            });
+        }
+
+        // Display method comparison
+        function displayMethodComparison(methodResults) {
+            // Create method comparison section if it doesn't exist
+            let comparisonSection = document.getElementById('methodComparison');
+            if (!comparisonSection) {
+                comparisonSection = document.createElement('div');
+                comparisonSection.id = 'methodComparison';
+                comparisonSection.className = 'results-section';
+                comparisonSection.innerHTML = `
+                    <h3><i class="fas fa-chart-line"></i> Detection Method Comparison</h3>
+                    <div class="method-comparison-grid" id="methodComparisonGrid"></div>
+                `;
+                document.querySelector('.results-section').after(comparisonSection);
+            }
+
+            const grid = document.getElementById('methodComparisonGrid');
+            grid.innerHTML = '';
+
+            Object.entries(methodResults).forEach(([methodName, methodData]) => {
+                const methodCard = document.createElement('div');
+                methodCard.className = 'method-card';
+                
+                const metrics = methodData.metrics || {};
+                const executionTime = methodData.execution_time || 0;
+                
+                methodCard.innerHTML = `
+                    <h4>${methodData.method || methodName}</h4>
+                    <div class="method-metrics">
+                        <div class="metric">
+                            <span class="metric-label">Accuracy:</span>
+                            <span class="metric-value">${(metrics.accuracy * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">F1-Score:</span>
+                            <span class="metric-value">${(metrics.f1_score * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Detected:</span>
+                            <span class="metric-value">${methodData.detected_malicious ? methodData.detected_malicious.length : 0}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Time:</span>
+                            <span class="metric-value">${executionTime.toFixed(2)}s</span>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(methodCard);
+            });
         }
 
         // Update client grid

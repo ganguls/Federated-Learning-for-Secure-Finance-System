@@ -16,7 +16,7 @@ services:
       - fl-network
     command: python ca_service.py
 
-  # Enhanced Dashboard with Research Demo
+  # Enhanced Dashboard with Research Demo and Detection Integration
   dashboard:
     build: ./dashboard
     ports:
@@ -26,19 +26,26 @@ services:
       - ./server:/app/server:ro
       - ./clients:/app/clients:ro
       - ./ca:/app/ca:ro
+      - ./data_poisoning_detection:/app/data_poisoning_detection:ro
       - ./attack_detection_service.py:/app/attack_detection_service.py:ro
+      - ./comprehensive_attack_detection.py:/app/comprehensive_attack_detection.py:ro
+      - ./fl_defenses:/app/fl_defenses:ro
       - ./demo_presentation.py:/app/demo_presentation.py:ro
       - ./start_research_demo.py:/app/start_research_demo.py:ro
       - ./presentation_guide.md:/app/presentation_guide.md:ro
       - ./RESEARCH_PROJECT_SUMMARY.md:/app/RESEARCH_PROJECT_SUMMARY.md:ro
       - dashboard-logs:/app/logs
       - demo-results:/app/demo_results
+      - detection-results:/app/detection_results
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - PYTHONPATH=/app
       - FLASK_ENV=production
       - DASHBOARD_PORT=5000
       - CA_URL=http://ca:9000
+      - DETECTION_ENABLED=true
+      - DETECTION_METHOD=kmeans
+      - LDP_EPSILON=1.0
     networks:
       - fl-network
     depends_on:
@@ -46,15 +53,17 @@ services:
       - server
     restart: unless-stopped
 
-  # Enhanced Server
+  # Enhanced Server with Detection Integration
   server:
     build: ./server
     ports:
       - "8080:8080"
     volumes:
       - ./Datapre:/app/data:ro
+      - ./data_poisoning_detection:/app/data_poisoning_detection:ro
       - ./global_model.pkl:/app/global_model.pkl
       - server-logs:/app/logs
+      - detection-results:/app/detection_results
       - ca-certs:/app/certs:ro
     environment:
       - PYTHONPATH=/app
@@ -63,9 +72,12 @@ services:
       - NUM_ROUNDS=10
       - CA_URL=http://ca:9000
       - ENABLE_CERTIFICATES=true
+      - DETECTION_ENABLED=true
+      - DETECTION_METHOD=kmeans
+      - LDP_EPSILON=1.0
     networks:
       - fl-network
-    command: python server.py
+    command: python enhanced_server_strategy.py
     restart: unless-stopped
 
   # Client Services (Dynamic scaling)
@@ -411,6 +423,8 @@ volumes:
   demo-results:
     driver: local
   research-logs:
+    driver: local
+  detection-results:
     driver: local
 
 networks:

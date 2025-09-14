@@ -1,0 +1,1753 @@
+# Complete Hybrid Sybil Attack Detection Model
+# FoolsGold + Adaptive Reputation + Temporal Tracking + Statistical Anomaly Detection
+# With proper hybrid ensemble results and comprehensive analysis
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.ensemble import RandomForestClassifier, IsolationForest
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.linear_model import LogisticRegression
+import xgboost as xgb
+from scipy import stats
+from scipy.spatial.distance import cosine
+import warnings
+import os
+import glob
+from typing import Tuple, Dict, List, Optional, Any
+from numba import jit, prange
+import time
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing as mp
+
+warnings.filterwarnings('ignore')
+
+# Set style for better plots
+plt.style.use('default')
+sns.set_palette("husl")
+
+# =============================================================================
+# 1. OPTIMIZED DATA LOADING AND PREPROCESSING
+# =============================================================================
+
+class FastDataValidator:
+    """Optimized data validator with reduced overhead"""
+
+    @staticmethod
+    def validate_data_quality(df: pd.DataFrame) -> Dict[str, Any]:
+        """Fast data quality assessment"""
+        quality_report = {
+            'total_rows': len(df),
+            'total_columns': len(df.columns),
+            'missing_values': df.isnull().sum().sum(),
+            'duplicate_rows': df.duplicated().sum(),
+            'issues': []
+        }
+
+        # Check for required columns
+        required_cols = ['round', 'client_id', 'is_sybil']
+        missing_required = [col for col in required_cols if col not in df.columns]
+        if missing_required:
+            quality_report['issues'].append(f"Missing required columns: {missing_required}")
+
+        # Check target variable distribution
+        if 'is_sybil' in df.columns:
+            target_dist = df['is_sybil'].value_counts()
+            quality_report['target_distribution'] = target_dist.to_dict()
+
+        return quality_report
+
+    @staticmethod
+    def clean_numeric_columns(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+        """Enhanced numeric column cleaning with string handling"""
+        df_clean = df.copy()
+
+        for col in columns:
+            if col in df_clean.columns:
+                print(f"  Cleaning column: {col}")
+
+                # Handle different data types
+                if df_clean[col].dtype == 'object':
+                    # First try direct numeric conversion
+                    numeric_converted = pd.to_numeric(df_clean[col], errors='coerce')
+
+                    # Check if conversion was successful for most values
+                    success_rate = numeric_converted.notna().sum() / len(df_clean[col])
+
+                    if success_rate > 0.5:  # If more than 50% converted successfully
+                        df_clean[col] = numeric_converted
+                    else:
+                        # Handle categorical strings
+                        print(f"    Column {col} contains categorical data, mapping to numeric")
+                        df_clean[col] = FastDataValidator._map_categorical_to_numeric(df_clean[col])
+                else:
+                    # Convert numeric columns
+                    df_clean[col] = pd.to_numeric(df_clean[col], errors='coerce')
+
+                # Handle infinite values
+                df_clean[col] = df_clean[col].replace([np.inf, -np.inf], np.nan)
+
+                # Fill missing values with median
+                if df_clean[col].isnull().any():
+                    median_val = df_clean[col].median()
+                    df_clean[col] = df_clean[col].fillna(median_val if not pd.isna(median_val) else 0)
+
+        return df_clean
+
+    @staticmethod
+    def _map_categorical_to_numeric(series: pd.Series) -> pd.Series:
+        """Map categorical strings to numeric values"""
+        # Common categorical mappings
+        common_mappings = {
+            # Intensity levels
+            'none': 0.0, 'low': 0.25, 'medium': 0.5, 'high': 0.75, 'very_high': 1.0,
+            'minimal': 0.1, 'moderate': 0.5, 'severe': 0.9, 'critical': 1.0,
+            # Boolean-like
+            'false': 0.0, 'true': 1.0, 'no': 0.0, 'yes': 1.0,
+            'off': 0.0, 'on': 1.0, 'disabled': 0.0, 'enabled': 1.0,
+            # Size categories
+            'small': 0.2, 'medium': 0.5, 'large': 0.8, 'huge': 1.0,
+            'tiny': 0.1, 'big': 0.9,
+            # Quality levels
+            'poor': 0.2, 'fair': 0.4, 'good': 0.6, 'very_good': 0.8, 'excellent': 1.0,
+        }
+
+        # Convert to lowercase for matching
+        series_lower = series.astype(str).str.lower().str.strip()
+
+        # Apply common mappings
+        mapped_series = series_lower.map(common_mappings)
+
+        # For unmapped values, use ordinal encoding
+        unmapped_mask = mapped_series.isna() & series.notna()
+        if unmapped_mask.any():
+            unique_unmapped = series_lower[unmapped_mask].unique()
+            # Create ordinal mapping for remaining values
+            ordinal_mapping = {val: (i + 1) / len(unique_unmapped)
+                             for i, val in enumerate(sorted(unique_unmapped))}
+
+            # Apply ordinal mapping
+            for val, numeric_val in ordinal_mapping.items():
+                mapped_series.loc[series_lower == val] = numeric_val
+
+        return mapped_series
+
+def load_and_preprocess_data(file_path: str) -> pd.DataFrame:
+    """Enhanced data loading with comprehensive string handling"""
+    print("📥 Loading and validating dataset...")
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Dataset file not found: {file_path}")
+
+    # Load with optimized settings
+    df = pd.read_csv(file_path, low_memory=False)
+
+    print(f"📋 Initial data inspection:")
+    print(f"  Shape: {df.shape}")
+    print(f"  Columns: {list(df.columns)}")
+
+    # Inspect data types and identify problematic columns
+    print(f"  Data types:")
+    for col, dtype in df.dtypes.items():
+        if dtype == 'object':
+            unique_count = df[col].nunique()
+            sample_values = df[col].dropna().unique()[:5]
+            print(f"    {col}: {dtype} ({unique_count} unique) - samples: {sample_values}")
+        else:
+            print(f"    {col}: {dtype}")
+
+    validator = FastDataValidator()
+    quality_report = validator.validate_data_quality(df)
+
+    print(f"✅ Dataset loaded: {quality_report['total_rows']:,} rows, {quality_report['total_columns']} columns")
+
+    if 'target_distribution' in quality_report:
+        sybil_count = quality_report['target_distribution'].get(1, 0)
+        benign_count = quality_report['target_distribution'].get(0, 0)
+        total = sybil_count + benign_count
+        if total > 0:
+            print(f"🤖 Sybil updates: {sybil_count:,} ({sybil_count/total*100:.1f}%)")
+            print(f"👤 Benign updates: {benign_count:,} ({benign_count/total*100:.1f}%)")
+
+    # Clean all columns (not just the predefined numeric ones)
+    print("🧹 Comprehensive data cleaning...")
+
+    # Get all potential numeric columns (exclude obvious categorical ones)
+    exclude_from_cleaning = ['client_id', 'client_type', 'attack_strategy', 'round', 'is_sybil']
+    columns_to_clean = [col for col in df.columns if col not in exclude_from_cleaning]
+
+    print(f"  Cleaning {len(columns_to_clean)} columns: {columns_to_clean}")
+
+    df_clean = validator.clean_numeric_columns(df, columns_to_clean)
+
+    # Ensure target variable is properly encoded
+    if 'is_sybil' in df_clean.columns:
+        df_clean['is_sybil'] = pd.to_numeric(df_clean['is_sybil'], errors='coerce').fillna(0).astype(int)
+
+    print("🧹 Data cleaning completed")
+    print(f"Final data types: {df_clean.dtypes.value_counts().to_dict()}")
+
+    return df_clean
+
+# =============================================================================
+# 2. OPTIMIZED FOOLSGOLD IMPLEMENTATION
+# =============================================================================
+
+@jit(nopython=True)
+def fast_cosine_similarity(vec1, vec2):
+    """Numba-optimized cosine similarity calculation"""
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
+
+class OptimizedFoolsGold:
+    """Optimized FoolsGold with strategic sampling and parallel processing"""
+
+    def __init__(self, similarity_threshold: float = 0.8, max_comparisons: int = 5000):
+        self.similarity_threshold = similarity_threshold
+        self.max_comparisons = max_comparisons
+        self.feature_weights = np.array([0.3, 0.25, 0.2, 0.1, 0.1, 0.025, 0.025])
+
+    def calculate_update_similarity(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Optimized similarity calculation with strategic sampling"""
+        print("🔍 Computing FoolsGold similarities...")
+
+        # Select available features
+        all_features = ['update_magnitude', 'cosine_similarity', 'coordination_strength',
+                       'layer_mean', 'layer_var', 'gradient_skewness', 'gradient_kurtosis']
+        available_features = [col for col in all_features if col in df.columns]
+
+        if not available_features:
+            print("  ⚠️  No suitable features found for FoolsGold analysis")
+            return self._get_default_foolsgold_features(len(df)), pd.DataFrame()
+
+        print(f"  Using {len(available_features)} features")
+
+        # Strategic sampling approach - focus on recent rounds and high-activity clients
+        similarity_results = []
+        total_comparisons = 0
+
+        # Group by round and process strategically
+        rounds = sorted(df['round'].unique())
+        recent_rounds = rounds[-min(50, len(rounds)):]  # Focus on recent rounds
+
+        for round_num in recent_rounds:
+            round_data = df[df['round'] == round_num].copy()
+
+            if len(round_data) < 2:
+                continue
+
+            # Limit clients per round for performance
+            if len(round_data) > 50:
+                # Sample strategically - keep all sybils and sample benign
+                sybil_data = round_data[round_data['is_sybil'] == 1]
+                benign_data = round_data[round_data['is_sybil'] == 0]
+
+                if len(benign_data) > 30:
+                    benign_data = benign_data.sample(n=30, random_state=42)
+
+                round_data = pd.concat([sybil_data, benign_data])
+
+            # Extract feature matrix
+            feature_matrix = round_data[available_features].fillna(0).values
+            client_ids = round_data['client_id'].values
+            is_sybil = round_data['is_sybil'].values
+
+            # Calculate similarities with optimized approach
+            n_clients = len(round_data)
+            comparisons_this_round = 0
+            max_per_round = min(500, (n_clients * (n_clients - 1)) // 2)
+
+            for i in range(n_clients):
+                for j in range(i + 1, n_clients):
+                    if comparisons_this_round >= max_per_round:
+                        break
+
+                    if total_comparisons >= self.max_comparisons:
+                        break
+
+                    # Fast similarity calculation
+                    similarity = fast_cosine_similarity(feature_matrix[i], feature_matrix[j])
+
+                    similarity_results.append({
+                        'round': round_num,
+                        'client1': client_ids[i],
+                        'client2': client_ids[j],
+                        'similarity': float(similarity),
+                        'both_sybil': bool(is_sybil[i] and is_sybil[j]),
+                        'either_sybil': bool(is_sybil[i] or is_sybil[j])
+                    })
+
+                    comparisons_this_round += 1
+                    total_comparisons += 1
+
+                if total_comparisons >= self.max_comparisons:
+                    break
+
+            if total_comparisons >= self.max_comparisons:
+                break
+
+        similarity_df = pd.DataFrame(similarity_results)
+        print(f"  Calculated {len(similarity_df):,} similarity pairs")
+
+        # Extract FoolsGold features
+        foolsgold_features = self._extract_optimized_foolsgold_features(df, similarity_df)
+
+        return foolsgold_features, similarity_df
+
+    def _extract_optimized_foolsgold_features(self, df: pd.DataFrame, similarity_df: pd.DataFrame) -> pd.DataFrame:
+        """Optimized feature extraction with vectorized operations"""
+        print("  Extracting FoolsGold features...")
+
+        features_list = []
+
+        # Pre-compute similarity lookups for efficiency
+        similarity_lookup = {}
+        for _, row in similarity_df.iterrows():
+            client1, client2 = row['client1'], row['client2']
+            sim_val = row['similarity']
+
+            if client1 not in similarity_lookup:
+                similarity_lookup[client1] = []
+            if client2 not in similarity_lookup:
+                similarity_lookup[client2] = []
+
+            similarity_lookup[client1].append(sim_val)
+            similarity_lookup[client2].append(sim_val)
+
+        for _, row in df.iterrows():
+            client_id = row['client_id']
+
+            # Get similarities for this client
+            client_similarities = similarity_lookup.get(client_id, [])
+
+            if client_similarities:
+                similarities_array = np.array(client_similarities)
+                features = {
+                    'foolsgold_max_similarity': float(similarities_array.max()),
+                    'foolsgold_avg_similarity': float(similarities_array.mean()),
+                    'foolsgold_std_similarity': float(similarities_array.std()),
+                    'foolsgold_high_sim_count': int((similarities_array > self.similarity_threshold).sum()),
+                    'foolsgold_coordination_score': float(similarities_array.max() * (1 + (similarities_array > self.similarity_threshold).mean())),
+                }
+            else:
+                features = {
+                    'foolsgold_max_similarity': 0.0,
+                    'foolsgold_avg_similarity': 0.0,
+                    'foolsgold_std_similarity': 0.0,
+                    'foolsgold_high_sim_count': 0,
+                    'foolsgold_coordination_score': 0.0,
+                }
+
+            features_list.append(features)
+
+        return pd.DataFrame(features_list)
+
+    def _get_default_foolsgold_features(self, n_rows: int) -> pd.DataFrame:
+        """Default features when FoolsGold calculation fails"""
+        default_features = {
+            'foolsgold_max_similarity': 0.0,
+            'foolsgold_avg_similarity': 0.0,
+            'foolsgold_std_similarity': 0.0,
+            'foolsgold_high_sim_count': 0,
+            'foolsgold_coordination_score': 0.0,
+        }
+        return pd.DataFrame([default_features] * n_rows)
+
+    def get_foolsgold_predictions(self, df: pd.DataFrame, foolsgold_features: pd.DataFrame) -> pd.Series:
+        """Generate FoolsGold-based predictions"""
+        # Combine multiple FoolsGold indicators
+        scores = (
+            0.4 * foolsgold_features['foolsgold_coordination_score'].fillna(0) +
+            0.3 * foolsgold_features['foolsgold_max_similarity'].fillna(0) +
+            0.2 * foolsgold_features['foolsgold_avg_similarity'].fillna(0) +
+            0.1 * (foolsgold_features['foolsgold_high_sim_count'].fillna(0) / 10)
+        )
+
+        # Threshold for binary prediction
+        threshold = scores.quantile(0.85)  # Top 15% as suspicious
+        predictions = (scores > threshold).astype(int)
+
+        return predictions
+
+# =============================================================================
+# 3. OPTIMIZED REPUTATION SYSTEM
+# =============================================================================
+
+class OptimizedReputationSystem:
+    """Streamlined reputation system with faster calculations"""
+
+    def __init__(self, initial_reputation: float = 1.0, decay_factor: float = 0.95):
+        self.initial_reputation = initial_reputation
+        self.decay_factor = decay_factor
+
+    def calculate_reputation_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Optimized reputation calculation"""
+        print("🏆 Computing Reputation features...")
+
+        # Sort data once
+        df_sorted = df.sort_values(['client_id', 'round']).copy()
+
+        # Vectorized suspicion calculation
+        df_sorted['suspicion_score'] = self._vectorized_suspicion_calculation(df_sorted)
+
+        # Group by client and calculate reputation features
+        reputation_features = []
+
+        for client_id, client_data in df_sorted.groupby('client_id'):
+            client_features = self._calculate_client_reputation(client_data)
+            reputation_features.extend([client_features] * len(client_data))
+
+        return pd.DataFrame(reputation_features)
+
+    def _vectorized_suspicion_calculation(self, df: pd.DataFrame) -> pd.Series:
+        """Vectorized suspicion score calculation"""
+        suspicion_components = []
+
+        # Attack intensity component
+        if 'attack_intensity' in df.columns:
+            attack_component = np.clip(df['attack_intensity'].fillna(0) / 0.5, 0, 1)
+            suspicion_components.append(attack_component)
+
+        # Update magnitude component
+        if 'update_magnitude' in df.columns:
+            magnitude_component = np.clip(df['update_magnitude'].fillna(0) / 10.0, 0, 1)
+            magnitude_component = np.where(magnitude_component > 0.7, magnitude_component, 0)
+            suspicion_components.append(magnitude_component)
+
+        # Coordination component
+        if 'coordination_strength' in df.columns:
+            coord_component = np.where(df['coordination_strength'].fillna(0) > 0.6,
+                                     df['coordination_strength'].fillna(0), 0)
+            suspicion_components.append(coord_component)
+
+        if suspicion_components:
+            # Combine components
+            combined = np.column_stack(suspicion_components)
+            return pd.Series(np.mean(combined, axis=1) * 0.7 + np.max(combined, axis=1) * 0.3)
+        else:
+            return pd.Series(np.zeros(len(df)))
+
+    def _calculate_client_reputation(self, client_data: pd.DataFrame) -> Dict[str, float]:
+        """Calculate reputation features for a single client"""
+        suspicion_values = client_data['suspicion_score'].values
+
+        # Simulate reputation evolution
+        reputation_history = []
+        current_rep = self.initial_reputation
+
+        for suspicion in suspicion_values:
+            if suspicion > 0.4:
+                current_rep *= self.decay_factor
+            else:
+                current_rep = min(1.0, current_rep * 1.02)
+            reputation_history.append(current_rep)
+
+        reputation_array = np.array(reputation_history)
+
+        return {
+            'reputation_current': float(current_rep),
+            'reputation_min': float(reputation_array.min()),
+            'reputation_mean': float(reputation_array.mean()),
+            'reputation_std': float(reputation_array.std()),
+            'suspicion_avg': float(suspicion_values.mean()),
+            'trust_score': float(current_rep * (1.0 - suspicion_values[-10:].mean()))
+        }
+
+    def get_reputation_predictions(self, reputation_features: pd.DataFrame) -> pd.Series:
+        """Generate Reputation-based predictions"""
+        # Combine reputation indicators
+        scores = (
+            0.4 * (1 - reputation_features['reputation_current'].fillna(1)) +
+            0.3 * reputation_features['suspicion_avg'].fillna(0) +
+            0.2 * (1 - reputation_features['trust_score'].fillna(1)) +
+            0.1 * reputation_features['reputation_std'].fillna(0)
+        )
+
+        # Threshold for binary prediction
+        threshold = scores.quantile(0.8)  # Top 20% as suspicious
+        predictions = (scores > threshold).astype(int)
+
+        return predictions
+
+# =============================================================================
+# 4. OPTIMIZED TEMPORAL BEHAVIOR TRACKER
+# =============================================================================
+
+class OptimizedTemporalTracker:
+    """Streamlined temporal analysis with reduced complexity"""
+
+    def __init__(self, window_sizes: List[int] = [5, 10]):
+        self.window_sizes = window_sizes
+
+    def extract_temporal_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Optimized temporal feature extraction"""
+        print("⏰ Computing Temporal features...")
+
+        df_sorted = df.sort_values(['client_id', 'round']).copy()
+        temporal_features = []
+
+        for client_id, client_data in df_sorted.groupby('client_id'):
+            client_features = self._calculate_client_temporal_features(client_data)
+            temporal_features.extend([client_features] * len(client_data))
+
+        return pd.DataFrame(temporal_features)
+
+    def _calculate_client_temporal_features(self, client_data: pd.DataFrame) -> Dict[str, float]:
+        """Calculate temporal features for a single client"""
+        features = {}
+
+        # Multi-window analysis (simplified)
+        for window_size in self.window_sizes:
+            window_data = client_data.tail(window_size)
+
+            # Update magnitude patterns
+            if 'update_magnitude' in window_data.columns and len(window_data) > 1:
+                mag_values = pd.to_numeric(window_data['update_magnitude'], errors='coerce').fillna(0)
+                features[f'temporal_w{window_size}_magnitude_mean'] = float(mag_values.mean())
+                features[f'temporal_w{window_size}_magnitude_std'] = float(mag_values.std())
+            else:
+                features[f'temporal_w{window_size}_magnitude_mean'] = 0.0
+                features[f'temporal_w{window_size}_magnitude_std'] = 0.0
+
+            # Attack frequency
+            if 'attack_intensity' in window_data.columns and len(window_data) > 1:
+                attack_values = pd.to_numeric(window_data['attack_intensity'], errors='coerce').fillna(0)
+                features[f'temporal_w{window_size}_attack_frequency'] = float((attack_values > 0.1).mean())
+            else:
+                features[f'temporal_w{window_size}_attack_frequency'] = 0.0
+
+        # Participation regularity
+        if len(client_data) > 1:
+            round_gaps = np.diff(client_data['round'].values)
+            features['temporal_participation_regularity'] = float(1.0 / (1.0 + np.std(round_gaps)))
+        else:
+            features['temporal_participation_regularity'] = 1.0
+
+        return features
+
+    def get_temporal_predictions(self, temporal_features: pd.DataFrame) -> pd.Series:
+        """Generate Temporal-based predictions"""
+        # Combine temporal indicators
+        scores = 0.0
+
+        # Attack frequency indicators
+        for window_size in self.window_sizes:
+            freq_col = f'temporal_w{window_size}_attack_frequency'
+            if freq_col in temporal_features.columns:
+                scores += 0.3 * temporal_features[freq_col].fillna(0)
+
+        # Magnitude volatility
+        for window_size in self.window_sizes:
+            std_col = f'temporal_w{window_size}_magnitude_std'
+            if std_col in temporal_features.columns:
+                scores += 0.2 * (temporal_features[std_col].fillna(0) / 5.0)  # Normalize
+
+        # Irregularity (inverted regularity)
+        if 'temporal_participation_regularity' in temporal_features.columns:
+            scores += 0.3 * (1 - temporal_features['temporal_participation_regularity'].fillna(1))
+
+        # Threshold for binary prediction
+        threshold = scores.quantile(0.75)  # Top 25% as suspicious
+        predictions = (scores > threshold).astype(int)
+
+        return predictions
+
+# =============================================================================
+# 5. OPTIMIZED ANOMALY DETECTOR
+# =============================================================================
+
+class OptimizedAnomalyDetector:
+    """Streamlined anomaly detection with reduced overhead"""
+
+    def __init__(self, contamination: float = 0.1):
+        self.contamination = contamination
+        self.detector = IsolationForest(contamination=contamination, random_state=42, n_estimators=100)
+
+    def detect_anomalies(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Optimized anomaly detection"""
+        print("📊 Computing Anomaly features...")
+
+        # Select key numerical features
+        key_features = ['update_magnitude', 'acc_improvement', 'attack_intensity', 'coordination_strength']
+        available_features = [col for col in key_features if col in df.columns]
+
+        if not available_features:
+            print("  ⚠️  No features available for anomaly detection")
+            return pd.DataFrame([self._get_default_anomaly_features()] * len(df))
+
+        # Prepare data
+        X_anomaly = df[available_features].fillna(0)
+
+        # Scale extreme values
+        for col in X_anomaly.columns:
+            q99 = X_anomaly[col].quantile(0.99)
+            q01 = X_anomaly[col].quantile(0.01)
+            X_anomaly[col] = X_anomaly[col].clip(lower=q01, upper=q99)
+
+        # Single anomaly detection method for speed
+        try:
+            anomaly_scores = self.detector.fit_predict(X_anomaly)
+            anomaly_scores_continuous = self.detector.score_samples(X_anomaly)
+        except Exception as e:
+            print(f"  Warning: Anomaly detection failed: {e}")
+            anomaly_scores = np.zeros(len(df))
+            anomaly_scores_continuous = np.zeros(len(df))
+
+        # Create features
+        features_list = []
+        for i in range(len(df)):
+            features = {
+                'anomaly_binary': int(anomaly_scores[i] == -1),
+                'anomaly_score': float(anomaly_scores_continuous[i]),
+                'anomaly_ensemble_score': float(anomaly_scores[i] == -1),
+            }
+            features_list.append(features)
+
+        return pd.DataFrame(features_list)
+
+    def _get_default_anomaly_features(self) -> Dict[str, float]:
+        """Default anomaly features"""
+        return {
+            'anomaly_binary': 0,
+            'anomaly_score': 0.0,
+            'anomaly_ensemble_score': 0.0,
+        }
+
+    def get_anomaly_predictions(self, anomaly_features: pd.DataFrame) -> pd.Series:
+        """Generate Anomaly-based predictions"""
+        # Use ensemble anomaly score directly
+        predictions = anomaly_features['anomaly_ensemble_score'].fillna(0).astype(int)
+        return predictions
+
+# =============================================================================
+# 6. COMPLETE HYBRID MODEL WITH PROPER ENSEMBLE
+# =============================================================================
+
+class CompleteHybridDetector:
+    """Complete hybrid detector with proper method ensemble and ML ensemble"""
+
+    def __init__(self):
+        # ML Models for final ensemble
+        self.ml_models = {
+            'random_forest': RandomForestClassifier(
+                n_estimators=100, max_depth=10, random_state=42,
+                class_weight='balanced', n_jobs=-1
+            ),
+            'xgboost': xgb.XGBClassifier(
+                random_state=42, n_estimators=100, max_depth=6,
+                learning_rate=0.1, n_jobs=-1
+            ),
+            'logistic_regression': LogisticRegression(
+                random_state=42, max_iter=2000, class_weight='balanced'
+            )
+        }
+
+        self.scaler = StandardScaler()
+        self.feature_names = []
+        self.is_fitted = False
+
+        # Store individual method results
+        self.method_results = {}
+        self.hybrid_ensemble_results = {}
+
+    def prepare_features(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
+        """Complete feature preparation with all methods"""
+        print("\n🔧 Preparing Complete Hybrid Feature Set...")
+
+        # Initialize all detection methods
+        foolsgold = OptimizedFoolsGold()
+        reputation_system = OptimizedReputationSystem()
+        temporal_tracker = OptimizedTemporalTracker()
+        anomaly_detector = OptimizedAnomalyDetector()
+
+        feature_dataframes = []
+        method_data = {}
+
+        # 1. FoolsGold Method
+        try:
+            foolsgold_features, similarity_df = foolsgold.calculate_update_similarity(df)
+            foolsgold_predictions = foolsgold.get_foolsgold_predictions(df, foolsgold_features)
+
+            feature_dataframes.append(foolsgold_features)
+            method_data['foolsgold'] = {
+                'features': foolsgold_features,
+                'predictions': foolsgold_predictions,
+                'similarity_df': similarity_df
+            }
+            print(f"    ✅ FoolsGold: {foolsgold_features.shape[1]} features")
+        except Exception as e:
+            print(f"    ⚠️  FoolsGold failed: {e}")
+            foolsgold_features = foolsgold._get_default_foolsgold_features(len(df))
+            foolsgold_predictions = pd.Series(np.zeros(len(df)))
+            feature_dataframes.append(foolsgold_features)
+            method_data['foolsgold'] = {
+                'features': foolsgold_features,
+                'predictions': foolsgold_predictions,
+                'similarity_df': pd.DataFrame()
+            }
+
+        # 2. Reputation Method
+        try:
+            reputation_features = reputation_system.calculate_reputation_features(df)
+            reputation_predictions = reputation_system.get_reputation_predictions(reputation_features)
+
+            feature_dataframes.append(reputation_features)
+            method_data['reputation'] = {
+                'features': reputation_features,
+                'predictions': reputation_predictions
+            }
+            print(f"    ✅ Reputation: {reputation_features.shape[1]} features")
+        except Exception as e:
+            print(f"    ⚠️  Reputation failed: {e}")
+            default_rep = pd.DataFrame([{
+                'reputation_current': 1.0, 'reputation_min': 1.0, 'reputation_mean': 1.0,
+                'reputation_std': 0.0, 'suspicion_avg': 0.0, 'trust_score': 1.0
+            }] * len(df))
+            reputation_predictions = pd.Series(np.zeros(len(df)))
+            feature_dataframes.append(default_rep)
+            method_data['reputation'] = {
+                'features': default_rep,
+                'predictions': reputation_predictions
+            }
+
+        # 3. Temporal Method
+        try:
+            temporal_features = temporal_tracker.extract_temporal_features(df)
+            temporal_predictions = temporal_tracker.get_temporal_predictions(temporal_features)
+
+            feature_dataframes.append(temporal_features)
+            method_data['temporal'] = {
+                'features': temporal_features,
+                'predictions': temporal_predictions
+            }
+            print(f"    ✅ Temporal: {temporal_features.shape[1]} features")
+        except Exception as e:
+            print(f"    ⚠️  Temporal failed: {e}")
+            default_temporal = pd.DataFrame([{
+                'temporal_w5_magnitude_mean': 0.0, 'temporal_w5_magnitude_std': 0.0,
+                'temporal_w5_attack_frequency': 0.0, 'temporal_w10_magnitude_mean': 0.0,
+                'temporal_w10_magnitude_std': 0.0, 'temporal_w10_attack_frequency': 0.0,
+                'temporal_participation_regularity': 1.0
+            }] * len(df))
+            temporal_predictions = pd.Series(np.zeros(len(df)))
+            feature_dataframes.append(default_temporal)
+            method_data['temporal'] = {
+                'features': default_temporal,
+                'predictions': temporal_predictions
+            }
+
+        # 4. Anomaly Method
+        try:
+            anomaly_features = anomaly_detector.detect_anomalies(df)
+            anomaly_predictions = anomaly_detector.get_anomaly_predictions(anomaly_features)
+
+            feature_dataframes.append(anomaly_features)
+            method_data['anomaly'] = {
+                'features': anomaly_features,
+                'predictions': anomaly_predictions
+            }
+            print(f"    ✅ Anomaly: {anomaly_features.shape[1]} features")
+        except Exception as e:
+            print(f"    ⚠️  Anomaly failed: {e}")
+            default_anomaly = pd.DataFrame([anomaly_detector._get_default_anomaly_features()] * len(df))
+            anomaly_predictions = pd.Series(np.zeros(len(df)))
+            feature_dataframes.append(default_anomaly)
+            method_data['anomaly'] = {
+                'features': default_anomaly,
+                'predictions': anomaly_predictions
+            }
+
+        # Combine all features
+        combined_features = pd.concat([df.reset_index(drop=True)] +
+                                    [feat_df.reset_index(drop=True) for feat_df in feature_dataframes],
+                                    axis=1)
+
+        print(f"✅ Combined features: {combined_features.shape[1]} total features")
+
+        # Store method results for analysis
+        self.method_results = method_data
+
+        return combined_features, method_data
+
+    def evaluate_individual_methods(self, df: pd.DataFrame, method_data: Dict) -> Dict:
+        """Evaluate each detection method individually"""
+        print("\n📊 Evaluating Individual Detection Methods...")
+
+        method_performance = {}
+        true_labels = df['is_sybil'].values
+
+        for method_name, data in method_data.items():
+            predictions = data['predictions'].values
+
+            # Calculate performance metrics
+            from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+            try:
+                accuracy = accuracy_score(true_labels, predictions)
+                precision = precision_score(true_labels, predictions, zero_division=0)
+                recall = recall_score(true_labels, predictions, zero_division=0)
+                f1 = f1_score(true_labels, predictions, zero_division=0)
+
+                method_performance[method_name] = {
+                    'accuracy': accuracy,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1_score': f1,
+                    'predictions': predictions
+                }
+
+                print(f"  🔍 {method_name.upper()}:")
+                print(f"    Accuracy: {accuracy:.4f}")
+                print(f"    Precision: {precision:.4f}")
+                print(f"    Recall: {recall:.4f}")
+                print(f"    F1-Score: {f1:.4f}")
+
+            except Exception as e:
+                print(f"    ❌ Error evaluating {method_name}: {e}")
+                method_performance[method_name] = {
+                    'accuracy': 0.0, 'precision': 0.0, 'recall': 0.0, 'f1_score': 0.0,
+                    'predictions': predictions
+                }
+
+        return method_performance
+
+    def create_hybrid_ensemble(self, method_data: Dict, df: pd.DataFrame) -> Dict:
+        """Create hybrid ensemble from individual method predictions"""
+        print("\n🎯 Creating Hybrid Method Ensemble...")
+
+        # Extract predictions from each method
+        method_predictions = {}
+        for method_name, data in method_data.items():
+            method_predictions[method_name] = data['predictions'].values
+
+        true_labels = df['is_sybil'].values
+
+        # Method 1: Simple Voting Ensemble
+        all_predictions = np.column_stack(list(method_predictions.values()))
+        voting_predictions = (np.sum(all_predictions, axis=1) >= 2).astype(int)  # Majority vote
+
+        # Method 2: Weighted Ensemble (based on F1 scores)
+        method_performance = self.evaluate_individual_methods(df, method_data)
+        weights = {}
+        total_f1 = sum(perf['f1_score'] for perf in method_performance.values()) + 1e-6
+
+        for method_name, perf in method_performance.items():
+            weights[method_name] = perf['f1_score'] / total_f1
+
+        weighted_scores = np.zeros(len(df))
+        for method_name, predictions in method_predictions.items():
+            weighted_scores += weights[method_name] * predictions
+
+        weighted_predictions = (weighted_scores > 0.5).astype(int)
+
+        # Method 3: Adaptive Threshold Ensemble
+        adaptive_threshold = np.percentile(weighted_scores, 85)  # Top 15% as suspicious
+        adaptive_predictions = (weighted_scores > adaptive_threshold).astype(int)
+
+        # Evaluate ensemble methods
+        ensemble_results = {}
+
+        for name, predictions in [
+            ('voting_ensemble', voting_predictions),
+            ('weighted_ensemble', weighted_predictions),
+            ('adaptive_ensemble', adaptive_predictions)
+        ]:
+            try:
+                from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
+                accuracy = accuracy_score(true_labels, predictions)
+                precision = precision_score(true_labels, predictions, zero_division=0)
+                recall = recall_score(true_labels, predictions, zero_division=0)
+                f1 = f1_score(true_labels, predictions, zero_division=0)
+
+                # For AUC, use weighted scores as probabilities
+                if name == 'weighted_ensemble':
+                    auc = roc_auc_score(true_labels, weighted_scores) if len(np.unique(true_labels)) > 1 else 0.5
+                else:
+                    auc = roc_auc_score(true_labels, predictions) if len(np.unique(predictions)) > 1 else 0.5
+
+                ensemble_results[name] = {
+                    'accuracy': accuracy,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1_score': f1,
+                    'auc': auc,
+                    'predictions': predictions,
+                    'scores': weighted_scores if name == 'weighted_ensemble' else predictions.astype(float)
+                }
+
+                print(f"  🎯 {name.upper()}:")
+                print(f"    Accuracy: {accuracy:.4f}")
+                print(f"    Precision: {precision:.4f}")
+                print(f"    Recall: {recall:.4f}")
+                print(f"    F1-Score: {f1:.4f}")
+                print(f"    AUC: {auc:.4f}")
+
+            except Exception as e:
+                print(f"    ❌ Error evaluating {name}: {e}")
+
+        # Store results
+        self.hybrid_ensemble_results = ensemble_results
+
+        return ensemble_results
+
+    def prepare_training_data(self, combined_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+        """Prepare training data with robust string handling"""
+        print("\n🎯 Preparing ML Training Data...")
+
+        exclude_cols = ['round', 'client_id', 'is_sybil', 'client_type', 'attack_strategy']
+        feature_cols = [col for col in combined_df.columns if col not in exclude_cols]
+
+        X = combined_df[feature_cols].copy()
+        y = combined_df['is_sybil'].astype(int)
+
+        print(f"  Initial shape: {X.shape}")
+
+        # Comprehensive data cleaning
+        X = self._robust_data_cleaning(X)
+
+        # Remove constant columns
+        constant_cols = [col for col in X.columns if X[col].nunique() <= 1]
+        if constant_cols:
+            print(f"  Removing {len(constant_cols)} constant columns")
+            X = X.drop(columns=constant_cols)
+
+        self.feature_names = list(X.columns)
+        print(f"✅ ML Training data prepared: {X.shape}")
+        return X, y
+
+    def _robust_data_cleaning(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Comprehensive data cleaning to handle all data types"""
+        print("  🧹 Performing robust data cleaning...")
+
+        X_clean = X.copy()
+
+        for col in X_clean.columns:
+            # Handle different data types
+            if X_clean[col].dtype == 'object':
+                # Handle string/object columns
+                X_clean[col] = self._convert_string_column(X_clean[col], col)
+            else:
+                # Handle numeric columns
+                X_clean[col] = pd.to_numeric(X_clean[col], errors='coerce')
+
+            # Fill missing values
+            if X_clean[col].isnull().any():
+                median_val = X_clean[col].median()
+                fill_val = median_val if not pd.isna(median_val) else 0.0
+                X_clean[col] = X_clean[col].fillna(fill_val)
+
+            # Handle infinite values
+            X_clean[col] = X_clean[col].replace([np.inf, -np.inf], 0.0)
+
+            # Ensure float type
+            X_clean[col] = X_clean[col].astype(float)
+
+        print(f"  ✅ Data cleaning complete. Final shape: {X_clean.shape}")
+        return X_clean
+
+    def _convert_string_column(self, series: pd.Series, col_name: str) -> pd.Series:
+        """Convert string column to numeric with smart mapping"""
+        # Try to extract numeric values first
+        numeric_series = pd.to_numeric(series, errors='coerce')
+
+        # If most values are numeric, keep the numeric conversion
+        non_null_count = series.notna().sum()
+        numeric_count = numeric_series.notna().sum()
+
+        if numeric_count / non_null_count > 0.8:  # 80% are numeric
+            return numeric_series
+
+        # Otherwise, create categorical mapping
+        category_mappings = {
+            # Intensity/Level mappings
+            'low': 0.2, 'medium': 0.5, 'high': 0.8, 'very_high': 1.0,
+            'none': 0.0, 'minimal': 0.1, 'moderate': 0.5, 'severe': 0.9,
+            # Boolean-like mappings
+            'true': 1.0, 'false': 0.0, 'yes': 1.0, 'no': 0.0,
+            'on': 1.0, 'off': 0.0, 'enabled': 1.0, 'disabled': 0.0,
+            # Size mappings
+            'small': 0.2, 'large': 0.8, 'tiny': 0.1, 'huge': 1.0,
+            # Quality mappings
+            'poor': 0.2, 'good': 0.8, 'excellent': 1.0, 'bad': 0.1,
+        }
+
+        # Apply known mappings
+        mapped_series = series.map(category_mappings)
+
+        # For unmapped values, create ordinal encoding
+        unmapped_mask = mapped_series.isna() & series.notna()
+        if unmapped_mask.any():
+            unmapped_vals = series[unmapped_mask].unique()
+
+            # Sort values for consistent ordering
+            sorted_vals = sorted(str(v) for v in unmapped_vals)
+            ordinal_map = {val: (i + 1) / len(sorted_vals) for i, val in enumerate(sorted_vals)}
+
+            # Apply ordinal mapping to unmapped values
+            for val in unmapped_vals:
+                mapped_series.loc[series == val] = ordinal_map[str(val)]
+
+        return mapped_series
+
+    def train_ml_models(self, X: pd.DataFrame, y: pd.Series) -> Dict:
+        """Train ML models on engineered features"""
+        print("\n🚀 Training ML Models on Engineered Features...")
+
+        # Train-test split
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+
+        # Scale features
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_test_scaled = self.scaler.transform(X_test)
+
+        ml_results = {}
+
+        for name, model in self.ml_models.items():
+            print(f"  🚀 Training {name}...")
+            start_time = time.time()
+
+            try:
+                model.fit(X_train_scaled, y_train)
+                y_pred = model.predict(X_test_scaled)
+                y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
+
+                from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
+                accuracy = accuracy_score(y_test, y_pred)
+                precision = precision_score(y_test, y_pred, zero_division=0)
+                recall = recall_score(y_test, y_pred, zero_division=0)
+                f1 = f1_score(y_test, y_pred, zero_division=0)
+                auc = roc_auc_score(y_test, y_pred_proba)
+
+                ml_results[name] = {
+                    'accuracy': accuracy,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1_score': f1,
+                    'auc': auc,
+                    'predictions': y_pred,
+                    'probabilities': y_pred_proba,
+                    'y_test': y_test,
+                    'training_time': time.time() - start_time
+                }
+
+                print(f"    ✅ {name}: AUC = {auc:.4f}, F1 = {f1:.4f} (Time: {time.time() - start_time:.1f}s)")
+
+            except Exception as e:
+                print(f"    ❌ {name} failed: {e}")
+
+        self.is_fitted = True
+        return ml_results
+
+    def create_final_ensemble(self, ml_results: Dict) -> Dict:
+        """Create final ensemble from ML models"""
+        print("\n🏆 Creating Final ML Ensemble...")
+
+        if not ml_results:
+            return {}
+
+        # Get test labels from first model
+        y_test = list(ml_results.values())[0]['y_test']
+
+        # Method 1: Simple Average
+        all_probabilities = np.column_stack([result['probabilities'] for result in ml_results.values()])
+        avg_probabilities = np.mean(all_probabilities, axis=1)
+        avg_predictions = (avg_probabilities > 0.5).astype(int)
+
+        # Method 2: Weighted by AUC
+        total_auc = sum(result['auc'] for result in ml_results.values()) + 1e-6
+        weighted_probabilities = np.zeros(len(y_test))
+
+        for result in ml_results.values():
+            weight = result['auc'] / total_auc
+            weighted_probabilities += weight * result['probabilities']
+
+        weighted_predictions = (weighted_probabilities > 0.5).astype(int)
+
+        # Evaluate ensemble methods
+        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
+        final_ensemble_results = {}
+
+        for name, (predictions, probabilities) in [
+            ('average_ensemble', (avg_predictions, avg_probabilities)),
+            ('weighted_ensemble', (weighted_predictions, weighted_probabilities))
+        ]:
+            accuracy = accuracy_score(y_test, predictions)
+            precision = precision_score(y_test, predictions, zero_division=0)
+            recall = recall_score(y_test, predictions, zero_division=0)
+            f1 = f1_score(y_test, predictions, zero_division=0)
+            auc = roc_auc_score(y_test, probabilities)
+
+            final_ensemble_results[name] = {
+                'accuracy': accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1_score': f1,
+                'auc': auc,
+                'predictions': predictions,
+                'probabilities': probabilities,
+                'y_test': y_test
+            }
+
+            print(f"  🏆 {name.upper()}:")
+            print(f"    Accuracy: {accuracy:.4f}")
+            print(f"    Precision: {precision:.4f}")
+            print(f"    Recall: {recall:.4f}")
+            print(f"    F1-Score: {f1:.4f}")
+            print(f"    AUC: {auc:.4f}")
+
+        return final_ensemble_results
+
+# =============================================================================
+# 7. COMPREHENSIVE ANALYSIS AND VISUALIZATION
+# =============================================================================
+
+def create_comprehensive_hybrid_analysis(df: pd.DataFrame, method_performance: Dict,
+                                       hybrid_ensemble: Dict, ml_results: Dict,
+                                       final_ensemble: Dict, feature_names: List[str]):
+    """Create comprehensive analysis showing all hybrid results"""
+    print("\n📊 Creating Comprehensive Hybrid Analysis...")
+
+    # Create figure with subplots for complete analysis
+    fig = plt.figure(figsize=(20, 16))
+    gs = fig.add_gridspec(4, 4, hspace=0.4, wspace=0.3)
+
+    # Color palette
+    colors = plt.cm.Set1(np.linspace(0, 1, 12))
+
+    # 1. Dataset Overview
+    ax1 = fig.add_subplot(gs[0, 0])
+    if 'is_sybil' in df.columns:
+        sybil_counts = df['is_sybil'].value_counts()
+        wedges, texts, autotexts = ax1.pie(sybil_counts.values, labels=['Benign', 'Sybil'],
+                                          autopct='%1.1f%%', startangle=90, colors=colors[:2])
+        ax1.set_title('Dataset Distribution', fontweight='bold')
+
+    # 2. Individual Method Performance
+    ax2 = fig.add_subplot(gs[0, 1])
+    if method_performance:
+        methods = list(method_performance.keys())
+        f1_scores = [method_performance[m]['f1_score'] for m in methods]
+        bars = ax2.bar(methods, f1_scores, color=colors[2:2+len(methods)], alpha=0.8)
+        ax2.set_title('Individual Method F1-Scores', fontweight='bold')
+        ax2.set_ylabel('F1-Score')
+        ax2.set_xticklabels(methods, rotation=45)
+
+        # Add value labels
+        for bar, f1 in zip(bars, f1_scores):
+            ax2.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,
+                    f'{f1:.3f}', ha='center', va='bottom', fontsize=9)
+
+    # 3. Hybrid Ensemble Performance
+    ax3 = fig.add_subplot(gs[0, 2])
+    if hybrid_ensemble:
+        ensemble_names = list(hybrid_ensemble.keys())
+        ensemble_aucs = [hybrid_ensemble[name]['auc'] for name in ensemble_names]
+        bars = ax3.bar(ensemble_names, ensemble_aucs, color=colors[6:6+len(ensemble_names)], alpha=0.8)
+        ax3.set_title('Hybrid Method Ensemble AUC', fontweight='bold')
+        ax3.set_ylabel('AUC Score')
+        ax3.set_xticklabels(ensemble_names, rotation=45)
+
+        # Add value labels
+        for bar, auc in zip(bars, ensemble_aucs):
+            ax3.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,
+                    f'{auc:.3f}', ha='center', va='bottom', fontsize=9)
+
+    # 4. ML Model Performance
+    ax4 = fig.add_subplot(gs[0, 3])
+    if ml_results:
+        ml_names = list(ml_results.keys())
+        ml_aucs = [ml_results[name]['auc'] for name in ml_names]
+        bars = ax4.bar(ml_names, ml_aucs, color=colors[9:9+len(ml_names)], alpha=0.8)
+        ax4.set_title('ML Model Performance AUC', fontweight='bold')
+        ax4.set_ylabel('AUC Score')
+        ax4.set_xticklabels(ml_names, rotation=45)
+
+        # Add value labels
+        for bar, auc in zip(bars, ml_aucs):
+            ax4.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,
+                    f'{auc:.3f}', ha='center', va='bottom', fontsize=9)
+
+    # 5. ROC Curves Comparison - Individual Methods
+    ax5 = fig.add_subplot(gs[1, 0])
+    ax5.plot([0, 1], [0, 1], 'k--', alpha=0.5, linewidth=1)
+
+    # Plot individual method ROCs (if we have probability scores)
+    method_colors = colors[:len(method_performance)]
+    for i, (method_name, perf) in enumerate(method_performance.items()):
+        # For individual methods, we'll use predictions as proxy scores
+        y_true = df['is_sybil'].values
+        y_scores = perf['predictions']  # Binary predictions
+
+        if len(np.unique(y_scores)) > 1:  # Only if we have varied predictions
+            try:
+                fpr, tpr, _ = roc_curve(y_true, y_scores)
+                auc = roc_auc_score(y_true, y_scores)
+                ax5.plot(fpr, tpr, color=method_colors[i],
+                        label=f'{method_name} (AUC: {auc:.3f})', linewidth=2)
+            except:
+                pass
+
+    ax5.set_xlabel('False Positive Rate')
+    ax5.set_ylabel('True Positive Rate')
+    ax5.set_title('Individual Methods ROC', fontweight='bold')
+    ax5.legend(loc='lower right', fontsize=8)
+
+    # 6. ROC Curves - Hybrid Ensembles
+    ax6 = fig.add_subplot(gs[1, 1])
+    ax6.plot([0, 1], [0, 1], 'k--', alpha=0.5, linewidth=1)
+
+    ensemble_colors = colors[6:6+len(hybrid_ensemble)]
+    for i, (name, result) in enumerate(hybrid_ensemble.items()):
+        try:
+            fpr, tpr, _ = roc_curve(result['y_test'] if 'y_test' in result else df['is_sybil'].values,
+                                   result['scores'])
+            ax6.plot(fpr, tpr, color=ensemble_colors[i],
+                    label=f'{name} (AUC: {result["auc"]:.3f})', linewidth=2)
+        except:
+            pass
+
+    ax6.set_xlabel('False Positive Rate')
+    ax6.set_ylabel('True Positive Rate')
+    ax6.set_title('Hybrid Ensemble ROC', fontweight='bold')
+    ax6.legend(loc='lower right', fontsize=8)
+
+    # 7. ROC Curves - ML Models
+    ax7 = fig.add_subplot(gs[1, 2])
+    ax7.plot([0, 1], [0, 1], 'k--', alpha=0.5, linewidth=1)
+
+    ml_colors = colors[9:9+len(ml_results)]
+    for i, (name, result) in enumerate(ml_results.items()):
+        try:
+            fpr, tpr, _ = roc_curve(result['y_test'], result['probabilities'])
+            ax7.plot(fpr, tpr, color=ml_colors[i],
+                    label=f'{name} (AUC: {result["auc"]:.3f})', linewidth=2)
+        except:
+            pass
+
+    ax7.set_xlabel('False Positive Rate')
+    ax7.set_ylabel('True Positive Rate')
+    ax7.set_title('ML Models ROC', fontweight='bold')
+    ax7.legend(loc='lower right', fontsize=8)
+
+    # 8. Final Ensemble ROC
+    ax8 = fig.add_subplot(gs[1, 3])
+    ax8.plot([0, 1], [0, 1], 'k--', alpha=0.5, linewidth=1)
+
+    if final_ensemble:
+        final_colors = colors[:len(final_ensemble)]
+        for i, (name, result) in enumerate(final_ensemble.items()):
+            try:
+                fpr, tpr, _ = roc_curve(result['y_test'], result['probabilities'])
+                ax8.plot(fpr, tpr, color=final_colors[i],
+                        label=f'{name} (AUC: {result["auc"]:.3f})', linewidth=2.5)
+            except:
+                pass
+
+    ax8.set_xlabel('False Positive Rate')
+    ax8.set_ylabel('True Positive Rate')
+    ax8.set_title('Final Ensemble ROC', fontweight='bold')
+    ax8.legend(loc='lower right', fontsize=8)
+
+    # 9-12. Confusion Matrices for best performers
+    confusion_axes = [fig.add_subplot(gs[2, i]) for i in range(4)]
+    confusion_titles = ['Best Individual Method', 'Best Hybrid Ensemble', 'Best ML Model', 'Best Final Ensemble']
+
+    # Find best performers
+    best_performers = []
+
+    # Best individual method
+    if method_performance:
+        best_method = max(method_performance.keys(), key=lambda x: method_performance[x]['f1_score'])
+        best_performers.append(('Individual', method_performance[best_method]))
+    else:
+        best_performers.append(None)
+
+    # Best hybrid ensemble
+    if hybrid_ensemble:
+        best_hybrid = max(hybrid_ensemble.keys(), key=lambda x: hybrid_ensemble[x]['auc'])
+        best_performers.append(('Hybrid', hybrid_ensemble[best_hybrid]))
+    else:
+        best_performers.append(None)
+
+    # Best ML model
+    if ml_results:
+        best_ml = max(ml_results.keys(), key=lambda x: ml_results[x]['auc'])
+        best_performers.append(('ML', ml_results[best_ml]))
+    else:
+        best_performers.append(None)
+
+    # Best final ensemble
+    if final_ensemble:
+        best_final = max(final_ensemble.keys(), key=lambda x: final_ensemble[x]['auc'])
+        best_performers.append(('Final', final_ensemble[best_final]))
+    else:
+        best_performers.append(None)
+
+    # Plot confusion matrices
+    for i, (ax, title, performer) in enumerate(zip(confusion_axes, confusion_titles, best_performers)):
+        if performer:
+            performer_type, result = performer
+
+            # Get true labels and predictions
+            if performer_type == 'Individual':
+                y_true = df['is_sybil'].values
+                y_pred = result['predictions']
+            else:
+                y_true = result['y_test'] if 'y_test' in result else df['is_sybil'].values
+                y_pred = result['predictions']
+
+            try:
+                cm = confusion_matrix(y_true, y_pred)
+
+                im = ax.imshow(cm, interpolation='nearest', cmap='Blues', alpha=0.8)
+
+                # Add text annotations
+                thresh = cm.max() / 2.
+                for row in range(cm.shape[0]):
+                    for col in range(cm.shape[1]):
+                        text_color = "white" if cm[row, col] > thresh else "black"
+                        ax.text(col, row, f'{cm[row, col]}', ha="center", va="center",
+                               color=text_color, fontsize=10, fontweight='bold')
+
+                ax.set_title(title, fontweight='bold')
+                ax.set_ylabel('True Label')
+                ax.set_xlabel('Predicted Label')
+                ax.set_xticks([0, 1])
+                ax.set_yticks([0, 1])
+                ax.set_xticklabels(['Benign', 'Sybil'])
+                ax.set_yticklabels(['Benign', 'Sybil'])
+
+            except Exception as e:
+                ax.text(0.5, 0.5, f'Error: {str(e)[:20]}...', ha='center', va='center', transform=ax.transAxes)
+        else:
+            ax.text(0.5, 0.5, 'No data available', ha='center', va='center', transform=ax.transAxes)
+
+    # 13-16. Performance comparison charts
+    comparison_axes = [fig.add_subplot(gs[3, i]) for i in range(4)]
+
+    # 13. Method Comparison - Precision vs Recall
+    ax13 = comparison_axes[0]
+    all_methods = {}
+
+    # Add individual methods
+    for name, perf in method_performance.items():
+        all_methods[f"Ind_{name}"] = {'precision': perf['precision'], 'recall': perf['recall'], 'type': 'individual'}
+
+    # Add hybrid ensembles
+    for name, perf in hybrid_ensemble.items():
+        all_methods[f"Hyb_{name}"] = {'precision': perf['precision'], 'recall': perf['recall'], 'type': 'hybrid'}
+
+    # Add ML models
+    for name, perf in ml_results.items():
+        all_methods[f"ML_{name}"] = {'precision': perf['precision'], 'recall': perf['recall'], 'type': 'ml'}
+
+    # Add final ensemble
+    for name, perf in final_ensemble.items():
+        all_methods[f"Final_{name}"] = {'precision': perf['precision'], 'recall': perf['recall'], 'type': 'final'}
+
+    # Plot precision vs recall
+    type_colors = {'individual': colors[0], 'hybrid': colors[1], 'ml': colors[2], 'final': colors[3]}
+    for method_name, perf in all_methods.items():
+        ax13.scatter(perf['recall'], perf['precision'],
+                    color=type_colors[perf['type']], s=60, alpha=0.7,
+                    label=perf['type'] if method_name == list(all_methods.keys())[0] else "")
+
+    ax13.set_xlabel('Recall')
+    ax13.set_ylabel('Precision')
+    ax13.set_title('Precision vs Recall Comparison', fontweight='bold')
+    ax13.grid(True, alpha=0.3)
+    ax13.legend()
+
+    # 14. Training Time Comparison (for ML models)
+    ax14 = comparison_axes[1]
+    if ml_results and any('training_time' in result for result in ml_results.values()):
+        ml_names = list(ml_results.keys())
+        training_times = [ml_results[name].get('training_time', 0) for name in ml_names]
+        bars = ax14.bar(ml_names, training_times, color=colors[2:2+len(ml_names)], alpha=0.7)
+        ax14.set_title('ML Model Training Time', fontweight='bold')
+        ax14.set_ylabel('Time (seconds)')
+        ax14.set_xticklabels(ml_names, rotation=45)
+
+        # Add value labels
+        for bar, time_val in zip(bars, training_times):
+            ax14.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.1,
+                     f'{time_val:.1f}s', ha='center', va='bottom', fontsize=9)
+    else:
+        ax14.text(0.5, 0.5, 'Training time data\nnot available', ha='center', va='center', transform=ax14.transAxes)
+
+    # 15. Overall Performance Ranking
+    ax15 = comparison_axes[2]
+
+    # Collect all results with F1 scores
+    all_results = []
+
+    for name, perf in method_performance.items():
+        all_results.append((f"Ind_{name}", perf['f1_score'], 'Individual'))
+
+    for name, perf in hybrid_ensemble.items():
+        all_results.append((f"Hyb_{name}", perf['f1_score'], 'Hybrid'))
+
+    for name, perf in ml_results.items():
+        all_results.append((f"ML_{name}", perf['f1_score'], 'ML'))
+
+    for name, perf in final_ensemble.items():
+        all_results.append((f"Final_{name}", perf['f1_score'], 'Final'))
+
+    # Sort by F1 score
+    all_results.sort(key=lambda x: x[1], reverse=True)
+
+    if all_results:
+        names, f1_scores, types = zip(*all_results[:8])  # Top 8 performers
+
+        bar_colors = [type_colors[t.lower()] for t in types]
+        bars = ax15.barh(range(len(names)), f1_scores, color=bar_colors, alpha=0.8)
+
+        ax15.set_yticks(range(len(names)))
+        ax15.set_yticklabels([name.replace('_', ' ') for name in names], fontsize=8)
+        ax15.set_xlabel('F1-Score')
+        ax15.set_title('Top Performers Ranking', fontweight='bold')
+        ax15.grid(True, alpha=0.3, axis='x')
+
+        # Add value labels
+        for i, (bar, f1) in enumerate(zip(bars, f1_scores)):
+            ax15.text(bar.get_width() + 0.01, bar.get_y() + bar.get_height()/2.,
+                     f'{f1:.3f}', ha='left', va='center', fontsize=8)
+
+    # 16. Summary Statistics
+    ax16 = comparison_axes[3]
+    ax16.axis('off')
+
+    # Calculate summary statistics
+    summary_text = "🏆 HYBRID DETECTION SUMMARY\n\n"
+
+    if method_performance:
+        best_individual = max(method_performance.keys(), key=lambda x: method_performance[x]['f1_score'])
+        best_ind_f1 = method_performance[best_individual]['f1_score']
+        summary_text += f"Best Individual Method:\n{best_individual.upper()} (F1: {best_ind_f1:.3f})\n\n"
+
+    if hybrid_ensemble:
+        best_hybrid_name = max(hybrid_ensemble.keys(), key=lambda x: hybrid_ensemble[x]['auc'])
+        best_hybrid_auc = hybrid_ensemble[best_hybrid_name]['auc']
+        summary_text += f"Best Hybrid Ensemble:\n{best_hybrid_name.upper()} (AUC: {best_hybrid_auc:.3f})\n\n"
+
+    if ml_results:
+        best_ml_name = max(ml_results.keys(), key=lambda x: ml_results[x]['auc'])
+        best_ml_auc = ml_results[best_ml_name]['auc']
+        summary_text += f"Best ML Model:\n{best_ml_name.upper()} (AUC: {best_ml_auc:.3f})\n\n"
+
+    if final_ensemble:
+        best_final_name = max(final_ensemble.keys(), key=lambda x: final_ensemble[x]['auc'])
+        best_final_auc = final_ensemble[best_final_name]['auc']
+        summary_text += f"Best Final Ensemble:\n{best_final_name.upper()} (AUC: {best_final_auc:.3f})\n\n"
+
+    # Overall best
+    if all_results:
+        overall_best = all_results[0]
+        summary_text += f"🥇 OVERALL CHAMPION:\n{overall_best[0].replace('_', ' ').upper()}\nF1-Score: {overall_best[1]:.3f}"
+
+    ax16.text(0.05, 0.95, summary_text, transform=ax16.transAxes, fontsize=10,
+             verticalalignment='top', bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.7))
+
+    plt.suptitle('Complete Hybrid Sybil Detection System Analysis\nFoolsGold + Reputation + Temporal + Anomaly Detection',
+                 fontsize=16, fontweight='bold', y=0.98)
+
+    plt.tight_layout()
+    plt.show()
+
+    return all_results[0] if all_results else None  # Return best overall result
+
+def print_comprehensive_hybrid_results(method_performance: Dict, hybrid_ensemble: Dict,
+                                     ml_results: Dict, final_ensemble: Dict, df: pd.DataFrame):
+    """Print comprehensive results for all hybrid components"""
+    print("\n" + "="*90)
+    print("🏆 COMPLETE HYBRID SYBIL DETECTION RESULTS")
+    print("="*90)
+    print("Components: FoolsGold + Adaptive Reputation + Temporal Tracking + Statistical Anomaly Detection")
+    print("="*90)
+
+    # Dataset summary
+    print(f"\n📊 DATASET SUMMARY:")
+    print(f"Total samples: {len(df):,}")
+
+    if 'is_sybil' in df.columns:
+        sybil_count = df['is_sybil'].sum()
+        benign_count = len(df) - sybil_count
+        print(f"Sybil attacks: {sybil_count:,} ({sybil_count/len(df)*100:.1f}%)")
+        print(f"Benign updates: {benign_count:,} ({benign_count/len(df)*100:.1f}%)")
+
+    # Individual Method Results
+    print(f"\n🔍 INDIVIDUAL DETECTION METHOD RESULTS:")
+    print("-" * 60)
+
+    for method_name, perf in method_performance.items():
+        print(f"\n📈 {method_name.upper()} METHOD:")
+        print(f"  Accuracy:  {perf['accuracy']:.4f}")
+        print(f"  Precision: {perf['precision']:.4f}")
+        print(f"  Recall:    {perf['recall']:.4f}")
+        print(f"  F1-Score:  {perf['f1_score']:.4f}")
+
+    # Hybrid Ensemble Results
+    print(f"\n🎯 HYBRID METHOD ENSEMBLE RESULTS:")
+    print("-" * 60)
+
+    for ensemble_name, result in hybrid_ensemble.items():
+        print(f"\n🎯 {ensemble_name.upper()}:")
+        print(f"  Accuracy:  {result['accuracy']:.4f}")
+        print(f"  Precision: {result['precision']:.4f}")
+        print(f"  Recall:    {result['recall']:.4f}")
+        print(f"  F1-Score:  {result['f1_score']:.4f}")
+        print(f"  AUC:       {result['auc']:.4f}")
+
+    # ML Model Results
+    print(f"\n🚀 MACHINE LEARNING MODEL RESULTS:")
+    print("-" * 60)
+
+    total_training_time = 0
+    for ml_name, result in ml_results.items():
+        training_time = result.get('training_time', 0)
+        total_training_time += training_time
+
+        print(f"\n🚀 {ml_name.upper()}:")
+        print(f"  Accuracy:  {result['accuracy']:.4f}")
+        print(f"  Precision: {result['precision']:.4f}")
+        print(f"  Recall:    {result['recall']:.4f}")
+        print(f"  F1-Score:  {result['f1_score']:.4f}")
+        print(f"  AUC:       {result['auc']:.4f}")
+        print(f"  Training Time: {training_time:.1f}s")
+
+    print(f"\nTotal ML Training Time: {total_training_time:.1f}s")
+
+    # Final Ensemble Results
+    print(f"\n🏆 FINAL ENSEMBLE RESULTS:")
+    print("-" * 60)
+
+    for final_name, result in final_ensemble.items():
+        print(f"\n🏆 {final_name.upper()}:")
+        print(f"  Accuracy:  {result['accuracy']:.4f}")
+        print(f"  Precision: {result['precision']:.4f}")
+        print(f"  Recall:    {result['recall']:.4f}")
+        print(f"  F1-Score:  {result['f1_score']:.4f}")
+        print(f"  AUC:       {result['auc']:.4f}")
+
+    # Best Performers Summary
+    print(f"\n🥇 BEST PERFORMERS SUMMARY:")
+    print("-" * 60)
+
+    # Find best in each category
+    if method_performance:
+        best_method = max(method_performance.keys(), key=lambda x: method_performance[x]['f1_score'])
+        print(f"Best Individual Method: {best_method.upper()} (F1: {method_performance[best_method]['f1_score']:.4f})")
+
+    if hybrid_ensemble:
+        best_hybrid = max(hybrid_ensemble.keys(), key=lambda x: hybrid_ensemble[x]['auc'])
+        print(f"Best Hybrid Ensemble: {best_hybrid.upper()} (AUC: {hybrid_ensemble[best_hybrid]['auc']:.4f})")
+
+    if ml_results:
+        best_ml = max(ml_results.keys(), key=lambda x: ml_results[x]['auc'])
+        print(f"Best ML Model: {best_ml.upper()} (AUC: {ml_results[best_ml]['auc']:.4f})")
+
+    if final_ensemble:
+        best_final = max(final_ensemble.keys(), key=lambda x: final_ensemble[x]['auc'])
+        print(f"Best Final Ensemble: {best_final.upper()} (AUC: {final_ensemble[best_final]['auc']:.4f})")
+
+    # Performance Rating
+    all_scores = []
+    all_scores.extend([perf['f1_score'] for perf in method_performance.values()])
+    all_scores.extend([result['auc'] for result in hybrid_ensemble.values()])
+    all_scores.extend([result['auc'] for result in ml_results.values()])
+    all_scores.extend([result['auc'] for result in final_ensemble.values()])
+
+    if all_scores:
+        max_score = max(all_scores)
+        if max_score >= 0.95:
+            rating = "🌟 EXCELLENT"
+        elif max_score >= 0.90:
+            rating = "⭐ VERY GOOD"
+        elif max_score >= 0.85:
+            rating = "✅ GOOD"
+        elif max_score >= 0.80:
+            rating = "👍 ACCEPTABLE"
+        else:
+            rating = "⚠️  NEEDS IMPROVEMENT"
+
+        print(f"\nOverall Performance Rating: {rating} (Best Score: {max_score:.4f})")
+
+# =============================================================================
+# 8. MAIN EXECUTION PIPELINE
+# =============================================================================
+
+def main_complete_hybrid(file_path: str = None) -> Tuple[CompleteHybridDetector, Dict, Dict, Dict, Dict]:
+    """Complete hybrid execution pipeline with all methods"""
+    print("🚀 COMPLETE HYBRID SYBIL DETECTION SYSTEM")
+    print("="*90)
+    print("🔍 FoolsGold + 🏆 Adaptive Reputation + ⏰ Temporal Tracking + 📊 Statistical Anomaly Detection")
+    print("🤖 + Machine Learning Ensemble")
+    print("="*90)
+
+    start_time = time.time()
+
+    # Use your existing file path
+    if file_path is None:
+        file_path = r'F:\year 4\xxxx\update\sybil_attack_model_updates_500rounds_7162_records_20250624_0112.csv'
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Dataset file not found: {file_path}")
+
+    # Load and validate data
+    print(f"📁 Using dataset: {file_path}")
+    df = load_and_preprocess_data(file_path)
+    load_time = time.time() - start_time
+    print(f"⏱️  Data loading time: {load_time:.1f}s")
+
+    # Initialize complete hybrid detector
+    hybrid_detector = CompleteHybridDetector()
+
+    # Feature engineering with all methods
+    feature_start = time.time()
+    combined_df, method_data = hybrid_detector.prepare_features(df)
+    feature_time = time.time() - feature_start
+    print(f"⏱️  Feature engineering time: {feature_time:.1f}s")
+
+    # Evaluate individual methods
+    individual_start = time.time()
+    method_performance = hybrid_detector.evaluate_individual_methods(df, method_data)
+    individual_time = time.time() - individual_start
+    print(f"⏱️  Individual method evaluation time: {individual_time:.1f}s")
+
+    # Create hybrid ensemble
+    hybrid_start = time.time()
+    hybrid_ensemble_results = hybrid_detector.create_hybrid_ensemble(method_data, df)
+    hybrid_time = time.time() - hybrid_start
+    print(f"⏱️  Hybrid ensemble time: {hybrid_time:.1f}s")
+
+    # Prepare training data for ML models
+    ml_prep_start = time.time()
+    X, y = hybrid_detector.prepare_training_data(combined_df)
+    ml_prep_time = time.time() - ml_prep_start
+    print(f"⏱️  ML data preparation time: {ml_prep_time:.1f}s")
+
+    # Train ML models
+    ml_train_start = time.time()
+    ml_results = hybrid_detector.train_ml_models(X, y)
+    ml_train_time = time.time() - ml_train_start
+    print(f"⏱️  ML model training time: {ml_train_time:.1f}s")
+
+    # Create final ensemble
+    final_ensemble_start = time.time()
+    final_ensemble_results = hybrid_detector.create_final_ensemble(ml_results)
+    final_ensemble_time = time.time() - final_ensemble_start
+    print(f"⏱️  Final ensemble time: {final_ensemble_time:.1f}s")
+
+    # Generate comprehensive analysis
+    analysis_start = time.time()
+    best_result = create_comprehensive_hybrid_analysis(
+        df, method_performance, hybrid_ensemble_results,
+        ml_results, final_ensemble_results, hybrid_detector.feature_names
+    )
+    analysis_time = time.time() - analysis_start
+    print(f"⏱️  Analysis time: {analysis_time:.1f}s")
+
+    # Print comprehensive results
+    print_comprehensive_hybrid_results(
+        method_performance, hybrid_ensemble_results, ml_results,
+        final_ensemble_results, df
+    )
+
+    total_time = time.time() - start_time
+    print(f"\n⏱️  TOTAL EXECUTION TIME: {total_time:.1f}s")
+
+    # Performance breakdown
+    print(f"\n📊 DETAILED TIME BREAKDOWN:")
+    print(f"Data loading: {load_time:.1f}s ({load_time/total_time*100:.1f}%)")
+    print(f"Feature engineering: {feature_time:.1f}s ({feature_time/total_time*100:.1f}%)")
+    print(f"Individual methods: {individual_time:.1f}s ({individual_time/total_time*100:.1f}%)")
+    print(f"Hybrid ensemble: {hybrid_time:.1f}s ({hybrid_time/total_time*100:.1f}%)")
+    print(f"ML preparation: {ml_prep_time:.1f}s ({ml_prep_time/total_time*100:.1f}%)")
+    print(f"ML training: {ml_train_time:.1f}s ({ml_train_time/total_time*100:.1f}%)")
+    print(f"Final ensemble: {final_ensemble_time:.1f}s ({final_ensemble_time/total_time*100:.1f}%)")
+    print(f"Analysis: {analysis_time:.1f}s ({analysis_time/total_time*100:.1f}%)")
+
+    # Save complete model
+    try:
+        import joblib
+        if best_result:
+            best_score = best_result[1]
+            model_filename = f'complete_hybrid_sybil_detector_{best_score:.4f}_f1.pkl'
+        else:
+            model_filename = 'complete_hybrid_sybil_detector.pkl'
+
+        save_data = {
+            'detector': hybrid_detector,
+            'method_performance': method_performance,
+            'hybrid_ensemble': hybrid_ensemble_results,
+            'ml_results': ml_results,
+            'final_ensemble': final_ensemble_results,
+            'feature_names': hybrid_detector.feature_names
+        }
+
+        joblib.dump(save_data, model_filename)
+        print(f"\n💾 Complete hybrid model saved: {model_filename}")
+    except Exception as e:
+        print(f"⚠️  Could not save model: {e}")
+
+    return hybrid_detector, method_performance, hybrid_ensemble_results, ml_results, final_ensemble_results
+
+# =============================================================================
+# 9. EXECUTION
+# =============================================================================
+
+if __name__ == "__main__":
+    print("\n🎬 Starting Complete Hybrid Sybil Detection Analysis...")
+
+    try:
+        # Your exact file path
+        file_path = r'/content/sybil_attack_model_updates_500rounds_7162_records_20250624_0112.csv'
+
+        print(f"📁 Using dataset: {file_path}")
+
+        # Run complete hybrid analysis
+        (hybrid_detector, method_performance, hybrid_ensemble_results,
+         ml_results, final_ensemble_results) = main_complete_hybrid(file_path)
+
+        print(f"\n🎉 Complete Hybrid Analysis Completed Successfully!")
+        print(f"📊 Individual Methods: {len(method_performance)} methods evaluated")
+        print(f"🎯 Hybrid Ensembles: {len(hybrid_ensemble_results)} ensembles created")
+        print(f"🚀 ML Models: {len(ml_results)} models trained")
+        print(f"🏆 Final Ensembles: {len(final_ensemble_results)} final ensembles")
+
+        # Highlight key achievements
+        print(f"\n🏅 KEY ACHIEVEMENTS:")
+        print("✅ Complete implementation of all 4 detection methods")
+        print("✅ Individual method evaluation and comparison")
+        print("✅ Hybrid method ensemble creation")
+        print("✅ Advanced ML model training on engineered features")
+        print("✅ Final ensemble optimization")
+        print("✅ Comprehensive visualization and analysis")
+        print("✅ Robust string handling and data preprocessing")
+        print("✅ Performance optimization and parallel processing")
+
+    except FileNotFoundError as e:
+        print(f"❌ File not found: {e}")
+        print("💡 Please check the file path")
+    except Exception as e:
+        print(f"❌ Error during execution: {e}")
+        import traceback
+        traceback.print_exc()
+
+    finally:
+        print(f"\n✨ Complete Hybrid Sybil Detection System Analysis Finished! ✨")
+
