@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pure Flask app without SocketIO to avoid the conflict
+Fixed Flask app that uses external attack detection service
 """
 
 import os
@@ -14,6 +14,7 @@ import requests
 import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, jsonify, send_from_directory, Response
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'fl-dashboard-secret-key-2024'
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 class FLDashboard:
     def __init__(self):
@@ -67,27 +69,22 @@ def index():
 def research():
     return render_template('index.html')
 
-@app.route('/logout')
-def logout():
-    """Logout route"""
-    return jsonify({'success': True, 'message': 'Logged out successfully'})
-
 @app.route('/health')
 def health():
     return jsonify({'status': 'healthy', 'timestamp': time.time()})
 
-# PURE FLASK: No SocketIO
+# FIXED: Use external service for attack detection
 @app.route('/api/detection/run_demo', methods=['POST'])
 def run_detection_demo():
-    """Run attack detection demo - PURE FLASK APPROACH"""
+    """Run attack detection demo - EXTERNAL SERVICE APPROACH"""
     try:
         data = request.get_json() or {}
         malicious_percentage = data.get('malicious_percentage', 20)
         attack_type = data.get('attack_type', 'label_flipping')
         epsilon = data.get('epsilon', 1.0)
         
-        # Call external Python script - use absolute path in Docker container
-        script_path = '/app/attack_detection_service.py'
+        # Call external Python script
+        script_path = os.path.join(os.path.dirname(__file__), '..', 'attack_detection_service.py')
         
         # Run the external script
         result = subprocess.run([
@@ -120,18 +117,14 @@ def run_detection_demo():
             
             return jsonify(response_data)
         else:
-            response = jsonify({
+            return jsonify({
                 'success': False, 
                 'error': f'External service failed: {result.stderr}'
-            })
-            response.status_code = 500
-            return response
+            }), 500
         
     except Exception as e:
         logger.error(f"Error running detection demo: {e}")
-        response = jsonify({'success': False, 'error': str(e)})
-        response.status_code = 500
-        return response
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/detection/history')
 def get_detection_history():
@@ -206,4 +199,4 @@ def get_system_metrics():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)

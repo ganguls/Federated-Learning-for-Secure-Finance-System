@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  fl-attack-detection:
+    build: .
+    image: fl-attack-detect:latest
+    container_name: fl-attack-detection
+    volumes:
+      - ./dataset:/app/dataset:ro  # Read-only dataset volume
+      - ./results:/app/results     # Results output volume
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    command: >
+      python scripts/run_attack_detection.py
+      --dataset /app/dataset/smallLendingClub.csv
+      --epochs 100
+      --n_train_clients 10
+      --n_total_clients 10
+      --malicious-percentages 0 10 20
+      --output-dir /app/results
+      --epsilon 1.0
+    restart: "no"
+    networks:
+      - fl-network
+
+  # Optional: Add a simple web interface for viewing results
+  fl-results-viewer:
+    image: nginx:alpine
+    container_name: fl-results-viewer
+    ports:
+      - "8080:80"
+    volumes:
+      - ./results:/usr/share/nginx/html:ro
+    depends_on:
+      - fl-attack-detection
+    restart: "no"
+    networks:
+      - fl-network
+
+networks:
+  fl-network:
+    driver: bridge
+
+volumes:
+  dataset:
+    driver: local
+  results:
+    driver: local
+
+
+

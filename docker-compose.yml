@@ -16,7 +16,7 @@ services:
       - fl-network
     command: python ca_service.py
 
-  # Enhanced Dashboard
+  # Enhanced Dashboard with Research Demo
   dashboard:
     build: ./dashboard
     ports:
@@ -26,7 +26,13 @@ services:
       - ./server:/app/server:ro
       - ./clients:/app/clients:ro
       - ./ca:/app/ca:ro
+      - ./attack_detection_service.py:/app/attack_detection_service.py:ro
+      - ./demo_presentation.py:/app/demo_presentation.py:ro
+      - ./start_research_demo.py:/app/start_research_demo.py:ro
+      - ./presentation_guide.md:/app/presentation_guide.md:ro
+      - ./RESEARCH_PROJECT_SUMMARY.md:/app/RESEARCH_PROJECT_SUMMARY.md:ro
       - dashboard-logs:/app/logs
+      - demo-results:/app/demo_results
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - PYTHONPATH=/app
@@ -347,6 +353,27 @@ services:
       - fl-network
     restart: unless-stopped
 
+  # Research Demo Service
+  research-demo:
+    build: ./dashboard
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./demo_presentation.py:/app/demo_presentation.py:ro
+      - ./start_research_demo.py:/app/start_research_demo.py:ro
+      - ./presentation_guide.md:/app/presentation_guide.md:ro
+      - ./RESEARCH_PROJECT_SUMMARY.md:/app/RESEARCH_PROJECT_SUMMARY.md:ro
+      - demo-results:/app/demo_results
+      - research-logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_ENV=production
+      - DASHBOARD_PORT=5000
+    networks:
+      - fl-network
+    command: python demo_presentation.py
+    restart: unless-stopped
+
   # Nginx reverse proxy
   nginx:
     image: nginx:alpine
@@ -380,6 +407,10 @@ volumes:
   redis-data:
     driver: local
   nginx-logs:
+    driver: local
+  demo-results:
+    driver: local
+  research-logs:
     driver: local
 
 networks:

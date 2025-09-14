@@ -1,0 +1,200 @@
+{
+  "working": [
+    {
+      "test": "Basic Connectivity",
+      "status": "PASS",
+      "message": "Dashboard is accessible",
+      "timestamp": "2025-09-13T17:22:38.543768"
+    },
+    {
+      "test": "Docker Services",
+      "status": "PASS",
+      "message": "3 services running",
+      "timestamp": "2025-09-13T17:22:39.225494"
+    },
+    {
+      "test": "File: dashboard/app.py",
+      "status": "PASS",
+      "message": "Exists",
+      "timestamp": "2025-09-13T17:22:39.231639"
+    },
+    {
+      "test": "File: dashboard/requirements.txt",
+      "status": "PASS",
+      "message": "Exists",
+      "timestamp": "2025-09-13T17:22:39.232210"
+    },
+    {
+      "test": "File: docker-compose.yml",
+      "status": "PASS",
+      "message": "Exists",
+      "timestamp": "2025-09-13T17:22:39.233238"
+    },
+    {
+      "test": "File: server/server.py",
+      "status": "PASS",
+      "message": "Exists",
+      "timestamp": "2025-09-13T17:22:39.234503"
+    },
+    {
+      "test": "File: simple_demo.py",
+      "status": "PASS",
+      "message": "Exists",
+      "timestamp": "2025-09-13T17:22:39.235019"
+    },
+    {
+      "test": "File: comprehensive_system_test.py",
+      "status": "PASS",
+      "message": "Exists",
+      "timestamp": "2025-09-13T17:22:39.236044"
+    },
+    {
+      "test": "Page: Main Dashboard",
+      "status": "PASS",
+      "message": "Accessible (HTTP 200)",
+      "timestamp": "2025-09-13T17:22:39.342422"
+    },
+    {
+      "test": "Page: Research Demo Page",
+      "status": "PASS",
+      "message": "Accessible (HTTP 200)",
+      "timestamp": "2025-09-13T17:22:39.412565"
+    },
+    {
+      "test": "Page: Health Check",
+      "status": "PASS",
+      "message": "Accessible (HTTP 200)",
+      "timestamp": "2025-09-13T17:22:39.449030"
+    },
+    {
+      "test": "Web Interface: HTML Content",
+      "status": "PASS",
+      "message": "Found in HTML",
+      "timestamp": "2025-09-13T17:22:39.510432"
+    },
+    {
+      "test": "Web Interface: Dashboard Title",
+      "status": "PASS",
+      "message": "Found in HTML",
+      "timestamp": "2025-09-13T17:22:39.510991"
+    },
+    {
+      "test": "Web Interface: JavaScript",
+      "status": "PASS",
+      "message": "Found in HTML",
+      "timestamp": "2025-09-13T17:22:39.511455"
+    },
+    {
+      "test": "Web Interface: CSS Styling",
+      "status": "PASS",
+      "message": "Found in HTML",
+      "timestamp": "2025-09-13T17:22:39.511975"
+    },
+    {
+      "test": "API: System Status API",
+      "status": "PASS",
+      "message": "Returns valid JSON with 5 keys",
+      "timestamp": "2025-09-13T17:22:40.920431"
+    },
+    {
+      "test": "API: Training Metrics API",
+      "status": "PASS",
+      "message": "Returns valid JSON with 5 keys",
+      "timestamp": "2025-09-13T17:22:40.932979"
+    },
+    {
+      "test": "API: Client Metrics API",
+      "status": "PASS",
+      "message": "Returns valid JSON with 10 keys",
+      "timestamp": "2025-09-13T17:22:41.631318"
+    },
+    {
+      "test": "API: System Metrics API",
+      "status": "PASS",
+      "message": "Returns valid JSON with 7 keys",
+      "timestamp": "2025-09-13T17:22:42.639918"
+    },
+    {
+      "test": "API: Detection Status API",
+      "status": "PASS",
+      "message": "Returns valid JSON with 4 keys",
+      "timestamp": "2025-09-13T17:22:47.664198"
+    },
+    {
+      "test": "API: Detection History API",
+      "status": "PASS",
+      "message": "Returns valid JSON with 1 keys",
+      "timestamp": "2025-09-13T17:22:47.678196"
+    },
+    {
+      "test": "Core LDP Function",
+      "status": "PASS",
+      "message": "LDP noise application works",
+      "timestamp": "2025-09-13T17:22:47.925612"
+    },
+    {
+      "test": "Core Detection Function",
+      "status": "PASS",
+      "message": "Detected 2 malicious clients",
+      "timestamp": "2025-09-13T17:22:47.926611"
+    }
+  ],
+  "not_working": [
+    {
+      "test": "System Resources",
+      "status": "FAIL",
+      "message": "Cannot check resources",
+      "timestamp": "2025-09-13T17:22:39.230839",
+      "error": "module 'psutil' has no attribute 'cpu_percent'"
+    },
+    {
+      "test": "API: Demo Clients API",
+      "status": "FAIL",
+      "message": "Request failed",
+      "timestamp": "2025-09-13T17:22:47.652206",
+      "error": "HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=5)"
+    },
+    {
+      "test": "Detection API: Basic Detection Test",
+      "status": "FAIL",
+      "message": "HTTP 500",
+      "timestamp": "2025-09-13T17:22:47.701741"
+    },
+    {
+      "test": "Detection API: Different Attack Type",
+      "status": "FAIL",
+      "message": "HTTP 500",
+      "timestamp": "2025-09-13T17:22:47.734542"
+    },
+    {
+      "test": "Detection API: High Privacy Level",
+      "status": "FAIL",
+      "message": "HTTP 500",
+      "timestamp": "2025-09-13T17:22:47.771341"
+    }
+  ],
+  "errors": [
+    {
+      "test": "System Resources",
+      "status": "FAIL",
+      "message": "Cannot check resources",
+      "timestamp": "2025-09-13T17:22:39.230839",
+      "error": "module 'psutil' has no attribute 'cpu_percent'"
+    },
+    {
+      "test": "API: Demo Clients API",
+      "status": "FAIL",
+      "message": "Request failed",
+      "timestamp": "2025-09-13T17:22:47.652206",
+      "error": "HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=5)"
+    }
+  ],
+  "summary": {
+    "total_tests": 28,
+    "passed": 23,
+    "failed": 5,
+    "pass_rate": 82.14285714285714,
+    "duration_seconds": 9.407533,
+    "test_time": "2025-09-13T17:22:38.519078"
+  }
+}

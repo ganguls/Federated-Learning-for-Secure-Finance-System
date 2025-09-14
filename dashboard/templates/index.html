@@ -1266,6 +1266,12 @@
                         <button class="btn secondary" onclick="simulateAttack()">
                             <i class="fas fa-bug"></i> Simulate Attack
                         </button>
+                        <button class="btn primary" onclick="runAttackDetection()">
+                            <i class="fas fa-shield-alt"></i> Run Detection
+                        </button>
+                        <button class="btn warning" onclick="toggleDetection()">
+                            <i class="fas fa-toggle-on"></i> Toggle Detection
+                        </button>
                     </div>
                     
                     <div class="chart-card">
@@ -1298,6 +1304,31 @@
                                     <span class="label" style="color: var(--current-text-secondary);">Defense Status:</span>
                                     <span class="value success" id="defense-status" style="font-weight: bold; color: #27ae60;">Active</span>
                                 </div>
+                                <div class="info-item">
+                                    <span class="label" style="color: var(--current-text-secondary);">Detection Accuracy:</span>
+                                    <span class="value" id="detection-accuracy" style="font-weight: bold; color: var(--primary-blue);">0.00%</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label" style="color: var(--current-text-secondary);">Detection F1:</span>
+                                    <span class="value" id="detection-f1" style="font-weight: bold; color: var(--primary-blue);">0.00</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Attack Detection Controls -->
+                            <div class="detection-controls" style="display: flex; gap: 1rem; margin-bottom: 2rem; padding: 1rem; background: var(--current-card-bg); border-radius: 8px; border: 1px solid var(--current-border-color);">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <label for="malicious-percentage" style="color: var(--current-text-secondary); font-weight: 500;">Malicious %:</label>
+                                    <input type="range" id="malicious-percentage" min="0" max="50" value="20" style="width: 100px;">
+                                    <span id="malicious-percentage-value" style="color: var(--current-text-primary); font-weight: bold;">20%</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <label for="epsilon-value" style="color: var(--current-text-secondary); font-weight: 500;">Privacy (ε):</label>
+                                    <input type="range" id="epsilon-value" min="0.1" max="2.0" step="0.1" value="1.0" style="width: 100px;">
+                                    <span id="epsilon-value-display" style="color: var(--current-text-primary); font-weight: bold;">1.0</span>
+                                </div>
+                                <button class="btn secondary" onclick="runDetectionWithParams()" style="padding: 8px 16px;">
+                                    <i class="fas fa-play"></i> Run Detection
+                                </button>
                             </div>
                             
                             <div class="client-table-container" style="overflow-x: auto;">
@@ -1316,6 +1347,58 @@
                                         <!-- Client rows will be populated by JavaScript -->
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Attack Detection Results -->
+                    <div class="chart-card" style="margin-top: 2rem;">
+                        <div class="chart-header">
+                            <h3 class="chart-title">
+                                <i class="fas fa-shield-alt"></i> Attack Detection Results
+                            </h3>
+                            <div class="chart-controls">
+                                <span class="status-indicator">
+                                    <span class="status-text" id="detection-status">Ready</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <div class="detection-results" id="detection-results" style="display: none;">
+                                <div class="results-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                                    <div class="result-card" style="padding: 1rem; background: var(--current-card-bg); border-radius: 8px; border: 1px solid var(--current-border-color);">
+                                        <div class="result-label" style="color: var(--current-text-secondary); font-size: 0.9em; margin-bottom: 0.5rem;">True Malicious</div>
+                                        <div class="result-value" id="true-malicious-count" style="font-size: 1.5em; font-weight: bold; color: #e74c3c;">0</div>
+                                    </div>
+                                    <div class="result-card" style="padding: 1rem; background: var(--current-card-bg); border-radius: 8px; border: 1px solid var(--current-border-color);">
+                                        <div class="result-label" style="color: var(--current-text-secondary); font-size: 0.9em; margin-bottom: 0.5rem;">Detected Malicious</div>
+                                        <div class="result-value" id="detected-malicious-count" style="font-size: 1.5em; font-weight: bold; color: #f39c12;">0</div>
+                                    </div>
+                                    <div class="result-card" style="padding: 1rem; background: var(--current-card-bg); border-radius: 8px; border: 1px solid var(--current-border-color);">
+                                        <div class="result-label" style="color: var(--current-text-secondary); font-size: 0.9em; margin-bottom: 0.5rem;">Detection Accuracy</div>
+                                        <div class="result-value" id="result-accuracy" style="font-size: 1.5em; font-weight: bold; color: #27ae60;">0.00%</div>
+                                    </div>
+                                    <div class="result-card" style="padding: 1rem; background: var(--current-card-bg); border-radius: 8px; border: 1px solid var(--current-border-color);">
+                                        <div class="result-label" style="color: var(--current-text-secondary); font-size: 0.9em; margin-bottom: 0.5rem;">F1 Score</div>
+                                        <div class="result-value" id="result-f1" style="font-size: 1.5em; font-weight: bold; color: #3498db;">0.00</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="detection-chart" style="margin-bottom: 2rem;">
+                                    <canvas id="detectionChart" width="400" height="200"></canvas>
+                                </div>
+                                
+                                <div class="detection-details" id="detection-details" style="display: none;">
+                                    <h4 style="color: var(--current-text-primary); margin-bottom: 1rem;">Detection Details</h4>
+                                    <div id="detection-details-content" style="background: var(--current-card-bg); padding: 1rem; border-radius: 8px; border: 1px solid var(--current-border-color);">
+                                        <!-- Details will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="no-results" id="no-detection-results" style="text-align: center; padding: 2rem; color: var(--current-text-secondary);">
+                                <i class="fas fa-shield-alt" style="font-size: 3em; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No detection results yet. Click "Run Detection" to start.</p>
                             </div>
                         </div>
                     </div>
@@ -2396,6 +2479,266 @@
                 }, Math.random() * 2000); // Stagger the attacks
             });
         }
+
+        // Attack Detection Functions
+        let detectionChart = null;
+        let detectionResults = null;
+
+        function runAttackDetection() {
+            document.getElementById('detection-status').textContent = 'Running Detection...';
+            
+            fetch('/api/detection/run_demo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    malicious_percentage: 20
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    detectionResults = data.result;
+                    displayDetectionResults(detectionResults);
+                    showNotification('Attack detection completed successfully', 'success');
+                } else {
+                    showNotification('Attack detection failed: ' + data.error, 'error');
+                }
+                document.getElementById('detection-status').textContent = 'Ready';
+            })
+            .catch(error => {
+                console.error('Error running attack detection:', error);
+                showNotification('Error running attack detection', 'error');
+                document.getElementById('detection-status').textContent = 'Ready';
+            });
+        }
+
+        function runDetectionWithParams() {
+            const maliciousPercentage = document.getElementById('malicious-percentage').value;
+            const epsilon = document.getElementById('epsilon-value').value;
+            
+            document.getElementById('detection-status').textContent = 'Running Detection...';
+            
+            fetch('/api/detection/run_demo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    malicious_percentage: parseInt(maliciousPercentage),
+                    epsilon: parseFloat(epsilon)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    detectionResults = data.result;
+                    displayDetectionResults(detectionResults);
+                    showNotification(`Attack detection completed with ${maliciousPercentage}% malicious clients`, 'success');
+                } else {
+                    showNotification('Attack detection failed: ' + data.error, 'error');
+                }
+                document.getElementById('detection-status').textContent = 'Ready';
+            })
+            .catch(error => {
+                console.error('Error running attack detection:', error);
+                showNotification('Error running attack detection', 'error');
+                document.getElementById('detection-status').textContent = 'Ready';
+            });
+        }
+
+        function displayDetectionResults(results) {
+            // Show results section
+            document.getElementById('detection-results').style.display = 'block';
+            document.getElementById('no-detection-results').style.display = 'none';
+            
+            // Update summary cards
+            document.getElementById('true-malicious-count').textContent = results.true_malicious.length;
+            document.getElementById('detected-malicious-count').textContent = results.detected_malicious.length;
+            
+            const accuracy = results.metrics.accuracy || 0;
+            const f1 = results.metrics.f1_score || 0;
+            
+            document.getElementById('result-accuracy').textContent = (accuracy * 100).toFixed(2) + '%';
+            document.getElementById('result-f1').textContent = f1.toFixed(3);
+            
+            // Update main dashboard metrics
+            document.getElementById('detection-accuracy').textContent = (accuracy * 100).toFixed(2) + '%';
+            document.getElementById('detection-f1').textContent = f1.toFixed(3);
+            
+            // Create detection chart
+            createDetectionChart(results);
+            
+            // Show detection details
+            showDetectionDetails(results);
+        }
+
+        function createDetectionChart(results) {
+            const ctx = document.getElementById('detectionChart').getContext('2d');
+            
+            if (detectionChart) {
+                detectionChart.destroy();
+            }
+            
+            const clientLosses = results.client_losses;
+            const trueMalicious = results.true_malicious;
+            const detectedMalicious = results.detected_malicious;
+            
+            // Prepare data for visualization
+            const labels = clientLosses.map((_, index) => `Client ${index + 1}`);
+            const lossData = clientLosses.map(loss => loss * 100); // Convert to percentage
+            
+            // Color coding
+            const backgroundColors = clientLosses.map((_, index) => {
+                if (trueMalicious.includes(index) && detectedMalicious.includes(index)) {
+                    return '#27ae60'; // True positive - green
+                } else if (trueMalicious.includes(index) && !detectedMalicious.includes(index)) {
+                    return '#e74c3c'; // False negative - red
+                } else if (!trueMalicious.includes(index) && detectedMalicious.includes(index)) {
+                    return '#f39c12'; // False positive - orange
+                } else {
+                    return '#3498db'; // True negative - blue
+                }
+            });
+            
+            detectionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Client Loss (%)',
+                        data: lossData,
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Attack Detection Results - Client Losses',
+                            color: 'var(--current-text-primary)'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Loss (%)',
+                                color: 'var(--current-text-primary)'
+                            },
+                            ticks: {
+                                color: 'var(--current-text-secondary)'
+                            },
+                            grid: {
+                                color: 'var(--current-border-color)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Client ID',
+                                color: 'var(--current-text-primary)'
+                            },
+                            ticks: {
+                                color: 'var(--current-text-secondary)'
+                            },
+                            grid: {
+                                color: 'var(--current-border-color)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showDetectionDetails(results) {
+            const detailsContent = document.getElementById('detection-details-content');
+            const metrics = results.metrics;
+            
+            let detailsHtml = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div>
+                        <h5 style="color: var(--current-text-primary); margin-bottom: 0.5rem;">Detection Metrics</h5>
+                        <p><strong>Accuracy:</strong> ${(metrics.accuracy * 100).toFixed(2)}%</p>
+                        <p><strong>Precision:</strong> ${(metrics.precision * 100).toFixed(2)}%</p>
+                        <p><strong>Recall:</strong> ${(metrics.recall * 100).toFixed(2)}%</p>
+                        <p><strong>F1 Score:</strong> ${metrics.f1_score.toFixed(3)}</p>
+                    </div>
+                    <div>
+                        <h5 style="color: var(--current-text-primary); margin-bottom: 0.5rem;">Detection Counts</h5>
+                        <p><strong>True Positives:</strong> ${metrics.true_positives || 0}</p>
+                        <p><strong>False Positives:</strong> ${metrics.false_positives || 0}</p>
+                        <p><strong>False Negatives:</strong> ${metrics.false_negatives || 0}</p>
+                        <p><strong>Total Detected:</strong> ${results.detected_malicious.length}</p>
+                    </div>
+                    <div>
+                        <h5 style="color: var(--current-text-primary); margin-bottom: 0.5rem;">Client Details</h5>
+                        <p><strong>True Malicious:</strong> [${results.true_malicious.map(i => i + 1).join(', ')}]</p>
+                        <p><strong>Detected Malicious:</strong> [${results.detected_malicious.map(i => i + 1).join(', ')}]</p>
+                        <p><strong>Detection Rate:</strong> ${((results.detected_malicious.length / results.true_malicious.length) * 100).toFixed(1)}%</p>
+                    </div>
+                </div>
+            `;
+            
+            detailsContent.innerHTML = detailsHtml;
+            document.getElementById('detection-details').style.display = 'block';
+        }
+
+        function toggleDetection() {
+            fetch('/api/detection/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const status = data.enabled ? 'Enabled' : 'Disabled';
+                    showNotification(`Attack detection ${status}`, 'success');
+                    updateDetectionStatus();
+                } else {
+                    showNotification('Failed to toggle detection', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling detection:', error);
+                showNotification('Error toggling detection', 'error');
+            });
+        }
+
+        function updateDetectionStatus() {
+            fetch('/api/detection/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.enabled) {
+                        document.querySelector('button[onclick="toggleDetection()"]').innerHTML = '<i class="fas fa-toggle-on"></i> Disable Detection';
+                    } else {
+                        document.querySelector('button[onclick="toggleDetection()"]').innerHTML = '<i class="fas fa-toggle-off"></i> Enable Detection';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating detection status:', error);
+                });
+        }
+
+        // Update slider values
+        document.getElementById('malicious-percentage').addEventListener('input', function() {
+            document.getElementById('malicious-percentage-value').textContent = this.value + '%';
+        });
+
+        document.getElementById('epsilon-value').addEventListener('input', function() {
+            document.getElementById('epsilon-value-display').textContent = this.value;
+        });
 
         // Auto-refresh demo data when demo tab is active
         function startDemoAutoRefresh() {

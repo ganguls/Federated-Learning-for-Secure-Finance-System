@@ -67,11 +67,6 @@ def index():
 def research():
     return render_template('index.html')
 
-@app.route('/logout')
-def logout():
-    """Logout route"""
-    return jsonify({'success': True, 'message': 'Logged out successfully'})
-
 @app.route('/health')
 def health():
     return jsonify({'status': 'healthy', 'timestamp': time.time()})
@@ -86,8 +81,8 @@ def run_detection_demo():
         attack_type = data.get('attack_type', 'label_flipping')
         epsilon = data.get('epsilon', 1.0)
         
-        # Call external Python script - use absolute path in Docker container
-        script_path = '/app/attack_detection_service.py'
+        # Call external Python script
+        script_path = os.path.join(os.path.dirname(__file__), '..', 'attack_detection_service.py')
         
         # Run the external script
         result = subprocess.run([
@@ -120,18 +115,14 @@ def run_detection_demo():
             
             return jsonify(response_data)
         else:
-            response = jsonify({
+            return jsonify({
                 'success': False, 
                 'error': f'External service failed: {result.stderr}'
-            })
-            response.status_code = 500
-            return response
+            }), 500
         
     except Exception as e:
         logger.error(f"Error running detection demo: {e}")
-        response = jsonify({'success': False, 'error': str(e)})
-        response.status_code = 500
-        return response
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/detection/history')
 def get_detection_history():
@@ -207,3 +198,4 @@ def get_system_metrics():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
+

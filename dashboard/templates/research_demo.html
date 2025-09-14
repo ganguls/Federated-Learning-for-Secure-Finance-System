@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Learning Attack Detection - Research Demo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-color: #dee2e6;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark-color);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--dark-color);
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .demo-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .control-group select,
+        .control-group input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .control-group select:focus,
+        .control-group input[type="range"]:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-value {
+            background: var(--secondary-color);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .metric-card h4 {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .metric-card .label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 25px;
+        }
+
+        .client-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .client-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .client-card.malicious {
+            border-color: var(--danger-color);
+            background: #ffeaea;
+        }
+
+        .client-card.detected {
+            border-color: var(--warning-color);
+            background: #fff3cd;
+        }
+
+        .client-card.benign {
+            border-color: var(--success-color);
+            background: #eafaf1;
+        }
+
+        .client-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .client-id {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .client-status {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .status-malicious {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .status-detected {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .status-benign {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .client-loss {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.error {
+            background: var(--danger-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        .notification.info {
+            background: var(--info-color);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .research-info {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .research-info h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .research-info p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: var(--dark-color);
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .client-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> Federated Learning Attack Detection</h1>
+            <p>Research Demonstration - Data Poisoning Prevention System</p>
+        </div>
+
+        <!-- Research Information -->
+        <div class="research-info">
+            <h3><i class="fas fa-graduation-cap"></i> Research Overview</h3>
+            <p>This demonstration showcases our <span class="highlight">Local Differential Privacy (LDP) + K-means clustering</span> approach for detecting malicious clients in federated learning systems. The system preserves client privacy while effectively identifying various data poisoning attacks.</p>
+            <p><strong>Key Features:</strong> Real-time attack detection, privacy-preserving analysis, multiple attack scenario support, and comprehensive performance metrics.</p>
+        </div>
+
+        <!-- Demo Controls -->
+        <div class="demo-grid">
+            <!-- Attack Configuration -->
+            <div class="demo-card">
+                <h3><i class="fas fa-bug"></i> Attack Configuration</h3>
+                
+                <div class="control-group">
+                    <label for="attackType">Attack Type</label>
+                    <select id="attackType">
+                        <option value="label_flipping">Label Flipping Attack</option>
+                        <option value="gradient_poisoning">Gradient Poisoning Attack</option>
+                        <option value="backdoor">Backdoor Attack</option>
+                        <option value="model_poisoning">Model Poisoning Attack</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="maliciousPercentage">Malicious Clients (%)</label>
+                    <div class="slider-container">
+                        <input type="range" id="maliciousPercentage" min="10" max="50" value="20" step="10">
+                        <span class="slider-value" id="maliciousPercentageValue">20%</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="privacyLevel">Privacy Level (ε)</label>
+                    <div class="slider-container">
+                        <input type="range" id="privacyLevel" min="0.1" max="5.0" value="1.0" step="0.1">
+                        <span class="slider-value" id="privacyLevelValue">1.0</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" onclick="runDetection()">
+                    <i class="fas fa-play"></i> Run Detection
+                </button>
+            </div>
+
+            <!-- System Controls -->
+            <div class="demo-card">
+                <h3><i class="fas fa-cogs"></i> System Controls</h3>
+                
+                <div class="control-group">
+                    <button class="btn" onclick="runComprehensiveDemo()">
+                        <i class="fas fa-chart-line"></i> Run Comprehensive Demo
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <button class="btn btn-warning" onclick="exportResults()">
+                        <i class="fas fa-download"></i> Export Results
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <button class="btn btn-danger" onclick="resetDemo()">
+                        <i class="fas fa-refresh"></i> Reset Demo
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="autoRefresh" checked> Auto-refresh (5s)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section">
+            <h3><i class="fas fa-chart-bar"></i> Detection Results</h3>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Running detection analysis...</p>
+            </div>
+
+            <div id="resultsContent">
+                <div class="results-grid">
+                    <div class="metric-card">
+                        <h4>Detection Accuracy</h4>
+                        <div class="value" id="accuracyValue">--</div>
+                        <div class="label">Overall Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>F1 Score</h4>
+                        <div class="value" id="f1Value">--</div>
+                        <div class="label">Precision & Recall</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>True Malicious</h4>
+                        <div class="value" id="trueMaliciousValue">--</div>
+                        <div class="label">Actual Malicious</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Detected</h4>
+                        <div class="value" id="detectedValue">--</div>
+                        <div class="label">Detected Malicious</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="detectionChart"></canvas>
+                </div>
+
+                <div class="client-grid" id="clientGrid">
+                    <!-- Client cards will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let detectionChart = null;
+        let autoRefreshInterval = null;
+        let currentResults = null;
+
+        // Initialize the demo
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSliders();
+            initializeChart();
+            startAutoRefresh();
+        });
+
+        // Initialize sliders
+        function initializeSliders() {
+            const maliciousSlider = document.getElementById('maliciousPercentage');
+            const maliciousValue = document.getElementById('maliciousPercentageValue');
+            const privacySlider = document.getElementById('privacyLevel');
+            const privacyValue = document.getElementById('privacyLevelValue');
+
+            maliciousSlider.addEventListener('input', function() {
+                maliciousValue.textContent = this.value + '%';
+            });
+
+            privacySlider.addEventListener('input', function() {
+                privacyValue.textContent = this.value;
+            });
+        }
+
+        // Initialize chart
+        function initializeChart() {
+            const ctx = document.getElementById('detectionChart').getContext('2d');
+            detectionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Client Loss',
+                        data: [],
+                        backgroundColor: [],
+                        borderColor: [],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            title: {
+                                display: true,
+                                text: 'Loss Value'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Client ID'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Client Loss Distribution and Detection Results',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Run detection
+        async function runDetection() {
+            const attackType = document.getElementById('attackType').value;
+            const maliciousPercentage = parseInt(document.getElementById('maliciousPercentage').value);
+            const privacyLevel = parseFloat(document.getElementById('privacyLevel').value);
+
+            showLoading(true);
+            showNotification('Running attack detection analysis...', 'info');
+
+            try {
+                const response = await fetch('/api/detection/run_demo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        attack_type: attackType,
+                        malicious_percentage: maliciousPercentage,
+                        epsilon: privacyLevel
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentResults = data.result;
+                    displayResults(data.result);
+                    showNotification('Detection completed successfully!', 'success');
+                } else {
+                    showNotification('Detection failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Error running detection: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Run comprehensive demo
+        async function runComprehensiveDemo() {
+            showLoading(true);
+            showNotification('Running comprehensive demonstration...', 'info');
+
+            try {
+                const response = await fetch('/api/research/run_comprehensive_demo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        scenarios: ['label_flipping', 'gradient_poisoning', 'backdoor'],
+                        privacy_levels: [0.5, 1.0, 2.0],
+                        malicious_percentages: [20, 30, 40]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Comprehensive demo completed! Check results.', 'success');
+                    console.log('Comprehensive Results:', data.results);
+                } else {
+                    showNotification('Comprehensive demo failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Error running comprehensive demo: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Export results
+        async function exportResults() {
+            try {
+                const response = await fetch('/api/research/export_results', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        format: 'json'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Results exported successfully!', 'success');
+                } else {
+                    showNotification('Export failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Error exporting results: ' + error.message, 'error');
+            }
+        }
+
+        // Reset demo
+        function resetDemo() {
+            currentResults = null;
+            document.getElementById('accuracyValue').textContent = '--';
+            document.getElementById('f1Value').textContent = '--';
+            document.getElementById('trueMaliciousValue').textContent = '--';
+            document.getElementById('detectedValue').textContent = '--';
+            
+            detectionChart.data.labels = [];
+            detectionChart.data.datasets[0].data = [];
+            detectionChart.data.datasets[0].backgroundColor = [];
+            detectionChart.data.datasets[0].borderColor = [];
+            detectionChart.update();
+
+            document.getElementById('clientGrid').innerHTML = '';
+            showNotification('Demo reset successfully!', 'info');
+        }
+
+        // Display results
+        function displayResults(results) {
+            // Update metrics
+            document.getElementById('accuracyValue').textContent = (results.metrics.accuracy * 100).toFixed(1) + '%';
+            document.getElementById('f1Value').textContent = (results.metrics.f1_score * 100).toFixed(1) + '%';
+            document.getElementById('trueMaliciousValue').textContent = results.detection_summary.true_malicious_count;
+            document.getElementById('detectedValue').textContent = results.detection_summary.detected_malicious_count;
+
+            // Update chart
+            const clientIds = results.client_details.map(c => `Client ${c.client_id}`);
+            const losses = results.client_details.map(c => c.loss);
+            const colors = results.client_details.map(c => {
+                if (c.is_malicious && results.detected_malicious.includes(c.client_id)) {
+                    return '#e74c3c'; // Red - correctly detected malicious
+                } else if (c.is_malicious) {
+                    return '#f39c12'; // Orange - missed malicious
+                } else if (results.detected_malicious.includes(c.client_id)) {
+                    return '#9b59b6'; // Purple - false positive
+                } else {
+                    return '#27ae60'; // Green - correctly identified benign
+                }
+            });
+
+            detectionChart.data.labels = clientIds;
+            detectionChart.data.datasets[0].data = losses;
+            detectionChart.data.datasets[0].backgroundColor = colors;
+            detectionChart.data.datasets[0].borderColor = colors;
+            detectionChart.update();
+
+            // Update client grid
+            updateClientGrid(results);
+        }
+
+        // Update client grid
+        function updateClientGrid(results) {
+            const clientGrid = document.getElementById('clientGrid');
+            clientGrid.innerHTML = '';
+
+            results.client_details.forEach(client => {
+                const clientCard = document.createElement('div');
+                clientCard.className = 'client-card';
+                
+                let statusClass = 'benign';
+                let statusText = 'Benign';
+                
+                if (client.is_malicious && results.detected_malicious.includes(client.client_id)) {
+                    statusClass = 'malicious';
+                    statusText = 'Malicious (Detected)';
+                } else if (client.is_malicious) {
+                    statusClass = 'malicious';
+                    statusText = 'Malicious (Missed)';
+                } else if (results.detected_malicious.includes(client.client_id)) {
+                    statusClass = 'detected';
+                    statusText = 'False Positive';
+                }
+
+                clientCard.classList.add(statusClass);
+                
+                clientCard.innerHTML = `
+                    <div class="client-id">Client ${client.client_id}</div>
+                    <div class="client-status status-${statusClass}">${statusText}</div>
+                    <div class="client-loss">Loss: ${(client.loss * 100).toFixed(1)}%</div>
+                `;
+
+                clientGrid.appendChild(clientCard);
+            });
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            if (show) {
+                loading.classList.add('show');
+                resultsContent.style.opacity = '0.5';
+            } else {
+                loading.classList.remove('show');
+                resultsContent.style.opacity = '1';
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Auto-refresh functionality
+        function startAutoRefresh() {
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            
+            autoRefreshCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    startAutoRefreshInterval();
+                } else {
+                    stopAutoRefreshInterval();
+                }
+            });
+
+            if (autoRefreshCheckbox.checked) {
+                startAutoRefreshInterval();
+            }
+        }
+
+        function startAutoRefreshInterval() {
+            stopAutoRefreshInterval();
+            autoRefreshInterval = setInterval(() => {
+                if (currentResults) {
+                    runDetection();
+                }
+            }, 5000);
+        }
+
+        function stopAutoRefreshInterval() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+    </script>
+</body>
+</html>
+
